@@ -166,6 +166,7 @@ export function SmoothCursor({
     rotation,
     scale,
     disableRotation,
+    disableSmooth,
     isMobile,
     prefersReducedMotion,
   ]);
