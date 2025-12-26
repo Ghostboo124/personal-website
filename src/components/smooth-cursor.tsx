@@ -39,7 +39,7 @@ export function SmoothCursor({
   const lastUpdateTime = useRef(Date.now());
   const previousAngle = useRef(-45);
   const accumulatedRotation = useRef(-45);
-  const movingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const movingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Much more responsive cursor tracking - minimal lag
   const cursorX = useSpring(0, {
@@ -135,7 +135,7 @@ export function SmoothCursor({
             setIsMoving(false);
             movingTimeoutRef.current = null;
           },
-          prefersReducedMotion ? 0 : 500, // 1 second timeout when cursor stops
+          prefersReducedMotion ? 0 : 500, // 500ms timeout when cursor stops
         );
       }
     };
