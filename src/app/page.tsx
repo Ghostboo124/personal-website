@@ -12,9 +12,9 @@ export default function Home() {
           <p className="max-w-md text-lg leading-8 text-zinc-400">
             This is Alex's (Ghostboo124) personal website
           </p>
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-zinc-50">
+          <h2 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-zinc-50">
             Profiles
-          </h1>
+          </h2>
           <ul className="list-disc">
             <li>
               <Link rel="me authn" href="https://codeberg.org/Ghostboo124">
