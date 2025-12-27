@@ -64,6 +64,7 @@ where \<type\> can be one of the following, and if it is a breaking change, appe
 - feat
 - fix
 - improvement
+- style
 - refactor
 
 [optional scope] can describe a part of the code (e.g. home for the home page (/), or login for the login system)
