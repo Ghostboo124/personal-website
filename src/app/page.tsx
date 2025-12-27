@@ -20,7 +20,7 @@ export default function Home() {
           </h2>
           <ul className="list-disc">
             <li>
-              <Link rel="me authn" href="https://codeberg.org/Ghostboo124">
+              <Link rel="me" href="https://codeberg.org/Ghostboo124">
                 <Button variant="link" size="sm">
                   Codeberg
                 </Button>
@@ -30,6 +30,13 @@ export default function Home() {
               <Link rel="me authn" href="https://github.com/Ghostboo124">
                 <Button variant="link" size="sm">
                   GitHub
+                </Button>
+              </Link>
+            </li>
+            <li>
+              <Link rel="me authn" href="https://www.last.fm/user/Ghostboo124">
+                <Button variant="link" size="sm">
+                  Last.fm
                 </Button>
               </Link>
             </li>
