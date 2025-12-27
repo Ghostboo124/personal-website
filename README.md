@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Website
 
-## Getting Started
+This is my personal website, located at [personal.apcoding.com.au](https://personal.apcoding.com.au) and is hosted through Vercel
 
-First, run the development server:
+This git repository is hosted on two places
+
+- [Codeberg](https://codeberg.org/Ghostboo124/personal-website) for the actual repository that is commited to, and
+- [Github](https://github.com/Ghostoo124/personal-website) as a push mirror for Vercel deployments and Coderabbit PR reviews.
+
+## Development process
+
+Firtly, fork the repo on Codeberg, then clone your copy of the repo repo with
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+git clone <http or ssh url to your codeberg repo>
+```
+
+Then create a new branch using
+
+```bash
+git branch -c main <new-branch-name>
+```
+
+Then install dependencies with
+
+```bash
+bun install
+```
+
+And finally, run the development server:
+
+```bash
 bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The server is hot reloaded when you make changes.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Commits
 
-## Learn More
+### Changes to main
 
-To learn more about Next.js, take a look at the following resources:
+Directly commiting to main is strictly **prohibited** and all changes must go through pull requests, please open a PR on both Codeberg and GitHub and it will be reviewed, before being merged into main.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Commit Messages
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To maintain a readable git history, from this documentation commit forwards, I will be using [Conventional Commits 1.0.0-beta.4](https://www.conventionalcommits.org/en/v1.0.0-beta.4) for git commit messages
 
-## Deploy on Vercel
+All commit messages should be in lower case and formatted as follows:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```txt
+<type>[optional scope]: <description>
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[optional body]
+
+[optional footer]
+```
+
+where \<type\> can be one of the following, and if it is a breaking change, append a `!` to the type
+
+- chore
+- docs
+- feat
+- fix
+- improvement
+- refactor
+
+[optional scope] can describe a part of the code (e.g. home for the home page (/), or login for the login system)
+
+\<description\> should be a brief description of what you changed, please try to limit each commit to only one change where possible.
+
+[optional body] can be used to provide a more detailed explanation of the commit. If the commit contains a breaking change, add to the start of the line `BREAKING CHANGE:`
+
+[optional footer] should be used if the \<type\> is fix, and should contain the issue number in the format `closes issue #<issue number>`. Please use Codeberg issue numbers (though the GitHub should be the same)
