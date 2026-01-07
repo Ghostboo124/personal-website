@@ -31,6 +31,7 @@ export default function RootLayout({
           rel="indieauth-metadata"
           href="/.well-known/oauth-authorization-server"
         />
+        <link rel="canonical" href="https://personal.apcoding.com.au/" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
