@@ -17,12 +17,14 @@
     "lucide-react": "^0.562.0",
     "motion": "^12.23.26",
     "next": "16.1.1",
+    "posthog-js": "^1.315.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
+    "@catppuccin/tailwindcss": "^1.0.0",
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
     "@tailwindcss/postcss": "^4",
@@ -40,6 +42,7 @@
     "unrs-resolver"
   ],
   "trustedDependencies": [
+    "core-js",
     "sharp",
     "unrs-resolver"
   ]
