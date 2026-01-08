@@ -35,7 +35,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "lowercase px-0 py-0 font-medium font-mono text-blue-600 text-sm transition-all hover:underline dark:text-blue-400",
+        link: "lowercase px-0 py-0 font-medium font-mono text-blue-600 text-sm transition-all hover:underline dark:text-ctp-blue",
       },
     },
     defaultVariants: {
