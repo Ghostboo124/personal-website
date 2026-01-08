@@ -10,7 +10,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!key) {
-      console.warn("PostHog key not not found, analytics disabled"); 
+      console.warn("PostHog key not found, analytics disabled");
       return;
     }
 
