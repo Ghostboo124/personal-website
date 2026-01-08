@@ -15,7 +15,6 @@ const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
     cssChunking: true,
-    authInterrupts: true,
     viewTransition: true,
     turbopackFileSystemCacheForDev: true,
     turbopackFileSystemCacheForBuild: true,
