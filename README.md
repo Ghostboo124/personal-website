@@ -5,11 +5,11 @@ This is my personal website, located at [personal.apcoding.com.au](https://perso
 This git repository is hosted on two places
 
 - [Codeberg](https://codeberg.org/Ghostboo124/personal-website) for the actual repository that is commited to, and
-- [Github](https://github.com/Ghostoo124/personal-website) as a push mirror for Vercel deployments and Coderabbit PR reviews.
+- [GitHub](https://github.com/Ghostboo124/personal-website) as a push mirror for Vercel deployments and Coderabbit PR reviews.
 
 ## Development process
 
-Firtly, fork the repo on Codeberg, then clone your copy of the repo repo with
+Firstly, fork the repo on Codeberg, then clone your copy of the repo with
 
 ```bash
 git clone <http or ssh url to your codeberg repo>
@@ -18,7 +18,7 @@ git clone <http or ssh url to your codeberg repo>
 Then create a new branch using
 
 ```bash
-git branch -c main <new-branch-name>
+git switch -c main <new-branch-name>
 ```
 
 Then install dependencies with
