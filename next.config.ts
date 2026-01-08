@@ -4,7 +4,6 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: true,
-  distDir: "build",
   crossOrigin: "anonymous",
   transpilePackages: [],
   pageExtensions: ["tsx", "ts"],
