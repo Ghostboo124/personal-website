@@ -163,7 +163,12 @@ export function Footer() {
                 className="duration-200 ease-out hover:bg-card active:brightness-75 grow"
                 asChild
               >
-                <Link href={item.url}>
+                <Link
+                  key={item.name}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {item.image ? (
                     <Image
                       loading="lazy"
@@ -184,7 +189,12 @@ export function Footer() {
                 className="duration-200 ease-out hover:bg-card active:brightness-75"
                 asChild
               >
-                <Link href={item.next}>
+                <Link
+                  key={item.name}
+                  href={item.next}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <span className="sr-only">Next</span>
                   <ArrowRight />
                 </Link>
