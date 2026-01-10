@@ -28,7 +28,7 @@ export function Footer() {
               image: "/buttons/hackclub.gif",
             },
             {
-              name: "Catpuccin",
+              name: "Catppuccin",
               url: "https://catpuccin.com",
               image: "/buttons/ctp.webp",
             },
