@@ -118,6 +118,7 @@ export function Footer() {
               prev: "https://ultrafastparrot.net/prev/lex",
               image: "/webrings/ultrafastparrot.gif",
               width: 40,
+              height: 40,
             },
             {
               name: "catppuccin",
@@ -132,6 +133,7 @@ export function Footer() {
             //   prev: "https://webmasterwebring.netlify.app?lex-previous",
             //   image: "/webrings/webmaster.png",
             //   width: 88,
+            //   height: 31,
             // },
           ].map((item, index) => (
             <div className="flex flex-row w-full" key={index}>
@@ -153,10 +155,13 @@ export function Footer() {
               >
                 <Link href={item.url}>
                   {item.image ? (
-                    <img
+                    <Image
+                      loading="lazy"
                       src={item.image}
                       alt={item.name}
+                      className={"w-[" + item.width + "px]"}
                       width={item.width || 40}
+                      height={item.height || 40}
                     />
                   ) : (
                     item.name
