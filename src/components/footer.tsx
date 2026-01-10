@@ -174,7 +174,7 @@ export function Footer() {
                       loading="lazy"
                       src={item.image}
                       alt={item.name}
-                      className={"w-[" + item.width + "px]"}
+                      style={{ width: item.width, height: item.height }}
                       width={item.width || 40}
                       height={item.height || 40}
                     />
