@@ -83,7 +83,12 @@ export function Footer() {
           ].map((item, index) => (
             <div className="flex flex-row w-full" key={index}>
               {item.url ? (
-                <Link key={item.name} href={item.url} target="_blank">
+                <Link
+                  key={item.name}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Image
                     loading="lazy"
                     src={item.image}
@@ -143,7 +148,12 @@ export function Footer() {
                 className="duration-200 ease-out hover:bg-card active:brightness-75"
                 asChild
               >
-                <Link href={item.prev}>
+                <Link
+                  key={item.name}
+                  href={item.prev}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <span className="sr-only">Previous</span>
                   <ArrowLeft />
                 </Link>
