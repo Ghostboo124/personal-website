@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SmoothCursor } from "@/components/smooth-cursor";
 import { PostHogProvider } from "./providers";
+import { register } from "../instrumentation";
+
+register();
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

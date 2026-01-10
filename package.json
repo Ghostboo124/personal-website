@@ -43,6 +43,7 @@
   ],
   "trustedDependencies": [
     "core-js",
+    "protobufjs",
     "sharp",
     "unrs-resolver"
   ]
