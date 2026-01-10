@@ -4,24 +4,40 @@ import { forwardRef, ComponentProps } from "react";
 
 const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
   (
-    {
-      href,
-      className,
-      prefetch,
-      shallow,
-      scroll,
-      replace,
-      target,
-      rel,
-      ...props
-    },
-    ref,
+    { href, className, prefetch, scroll, replace, target, rel, ...props },
+    ref
   ) => {
-    const isExternal =
+    // Check if href is external (string or UrlObject)
+    const isExternalString =
       typeof href === "string" &&
       (href.startsWith("http://") ||
         href.startsWith("https://") ||
         href.startsWith("//"));
+
+    const isExternalObject =
+      typeof href === "object" &&
+      href !== null &&
+      "pathname" in href &&
+      (href.pathname?.startsWith("http://") ||
+        href.pathname?.startsWith("https://") ||
+        href.pathname?.startsWith("//") ||
+        ("host" in href &&
+          typeof href.host === "string" &&
+          href.host.length > 0 &&
+          !href.host.startsWith("/")));
+
+    const isExternal = isExternalString || isExternalObject;
+
+    // Convert href to string for anchor tag when external
+    const hrefString: string =
+      typeof href === "string"
+        ? href
+        : isExternalObject &&
+          typeof href === "object" &&
+          href !== null &&
+          "pathname" in href
+        ? href.pathname || ""
+        : "";
 
     if (isExternal) {
       // Merge rel values, ensuring noopener noreferrer are always present
@@ -36,7 +52,7 @@ const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
       return (
         <a
           ref={ref}
-          href={href}
+          href={hrefString}
           className={clsx("underline", className)}
           target={target ?? "_blank"}
           rel={mergedRel}
@@ -51,7 +67,6 @@ const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
         href={href}
         className={clsx("underline", className)}
         prefetch={prefetch}
-        shallow={shallow}
         scroll={scroll}
         replace={replace}
         target={target}
@@ -59,7 +74,7 @@ const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
         {...props}
       />
     );
-  },
+  }
 );
 
 Link.displayName = "Link";
