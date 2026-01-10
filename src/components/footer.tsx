@@ -2,7 +2,7 @@ import Link from "@/components/custom-link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/button";
-<img src="https://88x31.kate.pet/madeon_linux.gif" height="31" />;
+
 export function Footer() {
   return (
     <>
