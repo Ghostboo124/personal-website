@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
     tsconfigPath: "tsconfig.json",
   },
+  images: {
+    remotePatterns: [new URL("https://**/**")],
+  },
   experimental: {
     inlineCss: true,
     cssChunking: true,
