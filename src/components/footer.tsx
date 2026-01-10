@@ -29,7 +29,7 @@ export function Footer() {
             },
             {
               name: "Catppuccin",
-              url: "https://catpuccin.com",
+              url: "https://catppuccin.com",
               image: "/buttons/ctp.webp",
             },
             {
