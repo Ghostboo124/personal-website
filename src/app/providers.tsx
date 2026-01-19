@@ -1,10 +1,12 @@
 // app/providers.tsx
 "use client";
 
-import { useEffect } from "react";
-
 import posthog from "posthog-js";
+
+import { useEffect } from "react";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ReactNode } from "react";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -29,4 +31,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return <PHProvider client={posthog}>{children}</PHProvider>;
+}
+
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
 }

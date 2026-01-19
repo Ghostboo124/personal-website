@@ -6,6 +6,9 @@ introspection_endpoint_auth_methods_supported: [
 ],
 */
 
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+
 export const POST = async (request: Request) => {
   // Your introspection logic here
   return Response.json({});

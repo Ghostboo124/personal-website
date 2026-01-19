@@ -5,7 +5,7 @@ import { forwardRef, ComponentProps } from "react";
 const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
   (
     { href, className, prefetch, scroll, replace, target, rel, ...props },
-    ref
+    ref,
   ) => {
     // Check if href is external (string or UrlObject)
     const isExternalString =
@@ -33,11 +33,11 @@ const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
       typeof href === "string"
         ? href
         : isExternalObject &&
-          typeof href === "object" &&
-          href !== null &&
-          "pathname" in href
-        ? href.pathname || ""
-        : "";
+            typeof href === "object" &&
+            href !== null &&
+            "pathname" in href
+          ? href.pathname || ""
+          : "";
 
     if (isExternal) {
       // Merge rel values, ensuring noopener noreferrer are always present
@@ -74,7 +74,7 @@ const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
         {...props}
       />
     );
-  }
+  },
 );
 
 Link.displayName = "Link";

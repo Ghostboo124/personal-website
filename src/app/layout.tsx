@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SmoothCursor } from "@/components/smooth-cursor";
-import { PostHogProvider } from "./providers";
-import { register } from "../instrumentation";
+import { PostHogProvider, ConvexClientProvider } from "./providers";
+// import { register } from "../instrumentation";
 
-register();
+// register();
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,8 +39,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <PostHogProvider>{children}</PostHogProvider>
-        <SmoothCursor disableRotation={false} />
+        <PostHogProvider>
+          <ConvexClientProvider>
+            {children}
+            <SmoothCursor disableRotation={false} />
+          </ConvexClientProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
