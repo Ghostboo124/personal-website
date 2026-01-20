@@ -11,6 +11,7 @@ export default function Todo() {
   const tasks = useQuery(api.tasks.get);
   const toggleTask = useMutation(api.tasks.toggleTask);
   const archiveTask = useMutation(api.tasks.archiveTask);
+  const deleteTask = useMutation(api.tasks.deleteTask);
   const createTask = useMutation(api.tasks.createTask);
 
   const [showArchived, setShowArchived] = useState(false);
@@ -118,7 +119,11 @@ export default function Todo() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-ctp-subtext1 uppercase tracking-wider w-48">
                     Created
                   </th>
-                  {!showArchived && (
+                  {showArchived ? (
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-ctp-subtext1 uppercase tracking-wider w-24">
+                      Delete
+                    </th>
+                  ) : (
                     <th className="px-6 py-4 text-left text-sm font-semibold text-ctp-subtext1 uppercase tracking-wider w-24">
                       Archive
                     </th>
@@ -166,7 +171,18 @@ export default function Todo() {
                         )}
                       </span>
                     </td>
-                    {!showArchived && (
+                    {showArchived ? (
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => deleteTask({ taskId: task._id })}
+                          className="flex items-center justify-center transition-opacity hover:opacity-70 cursor-pointer text-ctp-red"
+                          type="button"
+                          title="Delete task"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </td>
+                    ) : (
                       <td className="px-6 py-4">
                         <button
                           onClick={() => archiveTask({ taskId: task._id })}

@@ -62,3 +62,25 @@ export const archiveTask = mutation({
     return { ok: true };
   },
 });
+
+export const deleteTask = mutation({
+  args: { taskId: v.id("todo_list") },
+  handler: async (
+    ctx,
+    { taskId },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const task = await ctx.db.get(taskId);
+
+    if (!task) {
+      return { ok: false, error: "Task could not be found" }; // TODO: Proper logging for errors
+    }
+
+    if (!task.isArchived) {
+      return { ok: false, error: "Task is not archived, could not delete" };
+    }
+
+    await ctx.db.delete(taskId);
+
+    return { ok: true };
+  },
+});
