@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/button";
-import { Titlebar } from "@/components/titlebar";
 import { Footer } from "@/components/footer";
+import { Titlebar } from "@/components/titlebar";
 
 export default function Home() {
   return (

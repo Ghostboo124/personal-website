@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SmoothCursor } from "@/components/smooth-cursor";
-import { PostHogProvider, ConvexClientProvider } from "./providers";
+import { ConvexClientProvider, PostHogProvider } from "./providers";
+
 // import { register } from "../instrumentation";
 
 // register();
@@ -19,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Personal Website",
-  description: "Alex's Personal Website",
+  description: "Lexy's Personal Website",
 };
 
 export default function RootLayout({

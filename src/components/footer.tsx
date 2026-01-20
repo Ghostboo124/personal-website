@@ -1,7 +1,7 @@
-import Link from "@/components/custom-link";
-import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/button";
+import Link from "@/components/custom-link";
 
 export function Footer() {
   return (

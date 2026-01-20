@@ -1,12 +1,10 @@
 // app/providers.tsx
 "use client";
 
-import posthog from "posthog-js";
-
-import { useEffect } from "react";
-import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { ReactNode } from "react";
+import posthog from "posthog-js";
+import { PostHogProvider as PHProvider } from "posthog-js/react";
+import { type ReactNode, useEffect } from "react";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {

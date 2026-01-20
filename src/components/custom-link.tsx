@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import NextLink from "next/link";
-import { forwardRef, ComponentProps } from "react";
+import { type ComponentProps, forwardRef } from "react";
 
 const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
   (
