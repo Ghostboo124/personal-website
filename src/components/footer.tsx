@@ -81,7 +81,7 @@ export function Footer() {
               image: "/buttons/css-is-diff.gif",
             },
           ].map((item, index) => (
-            <div className="flex flex-row w-full" key={index}>
+            <div className="flex flex-row w-full">
               {item.url ? (
                 <Link
                   key={item.name}
@@ -141,7 +141,7 @@ export function Footer() {
             //   height: 31,
             // },
           ].map((item, index) => (
-            <div className="flex flex-row w-full" key={index}>
+            <div className="flex flex-row w-full">
               <Button
                 variant="ghost"
                 size="icon"

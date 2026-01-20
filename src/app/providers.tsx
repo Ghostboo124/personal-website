@@ -31,8 +31,16 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   return <PHProvider client={posthog}>{children}</PHProvider>;
 }
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+let convex: ConvexReactClient;
+
+if (process.env.NEXT_PUBLIC_CONVEX_URL) {
+  console.log("Could not find NEXT_PUBLIC_CONVEX_URL env variable");
+  convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+}
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  if (!convex) {
+    return <>{children}</>;
+  }
   return <ConvexProvider client={convex}>{children}</ConvexProvider>;
 }

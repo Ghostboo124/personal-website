@@ -115,7 +115,7 @@ export async function fetchClientMetadata(
     }
 
     return defaultMetadata;
-  } catch (error) {
+  } catch (_error) {
     // TODO: Add proper logging - Error fetching client metadata
     return defaultMetadata;
   }
@@ -165,7 +165,7 @@ function parseMetaTags(html: string): Partial<ClientMetadata> | null {
       client_name,
       logo_uri,
     };
-  } catch (error) {
+  } catch (_error) {
     // TODO: Add proper logging - Error parsing meta tags
     return null;
   }

@@ -1,6 +1,12 @@
-import { User, Mail, MessageSquare, Phone, CheckCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Mail,
+  MessageSquare,
+  Phone,
+  User,
+} from "lucide-react";
 import { fetchClientMetadata } from "@/lib/utils";
-import { AlertTriangle } from "lucide-react";
 
 type IndieAuthSearchParams = {
   response_type: string;
