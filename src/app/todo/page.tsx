@@ -44,7 +44,7 @@ export default function Todo() {
   return (
     <div className="dark frappe flex flex-col min-h-screen items-center justify-center font-sans bg-ctp-base">
       <Titlebar />
-      <main className="flex flex-1 overflow-auto w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-ctp-base sm:items-start">
+      <main className="flex flex-1 overflow-auto w-full max-w-3xl flex-col items-center justify-center py-4 px-16 bg-ctp-base sm:items-start">
         <div className="flex flex-col items-center gap-4 text-center sm:items-start sm:text-left text-ctp-text self-center w-full">
           {/* Action Buttons */}
           <div className="flex gap-2 w-full justify-between">
