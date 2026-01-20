@@ -80,8 +80,8 @@ export function Footer() {
               name: "CSS is Difficult",
               image: "/buttons/css-is-diff.gif",
             },
-          ].map((item, index) => (
-            <div className="flex flex-row w-full">
+          ].map((item) => (
+            <div key={item.name} className="flex flex-row w-full">
               {item.url ? (
                 <Link
                   key={item.name}
@@ -140,8 +140,8 @@ export function Footer() {
             //   width: 88,
             //   height: 31,
             // },
-          ].map((item, index) => (
-            <div className="flex flex-row w-full">
+          ].map((item) => (
+            <div key={item.name} className="flex flex-row w-full">
               <Button
                 variant="ghost"
                 size="icon"

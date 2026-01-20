@@ -1,11 +1,4 @@
-import {
-  AlertTriangle,
-  CheckCircle,
-  Mail,
-  MessageSquare,
-  Phone,
-  User,
-} from "lucide-react";
+import { AlertTriangle, Mail, User } from "lucide-react";
 import { fetchClientMetadata } from "@/lib/utils";
 
 type IndieAuthSearchParams = {
@@ -85,9 +78,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
         </div>
 
         {/* Warning if redirect uri is invalid */}
-        {redirect_uri_valid ? (
-          <></>
-        ) : (
+        {!redirect_uri_valid && (
           <InvalidRedirectURI
             redirect_uri={search_params.redirect_uri}
             redirect_uris={clientMetadata.redirect_uris}
@@ -134,16 +125,23 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
 
         {/* Action Buttons */}
         <div className="p-6 bg-ctp-mantle flex gap-3">
-          <button className="flex-1 px-6 py-3 bg-ctp-red hover:bg-ctp-red-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl">
+          <button
+            className="flex-1 px-6 py-3 bg-ctp-red hover:bg-ctp-red-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
+            type="button"
+          >
             Deny
           </button>
-          <button className="flex-1 px-6 py-3 bg-ctp-green hover:bg-ctp-green-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+          <button
+            className="flex-1 px-6 py-3 bg-ctp-green hover:bg-ctp-green-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            type="button"
+          >
             Authorize
             <svg
               className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -168,7 +166,7 @@ export function InvalidRedirectURI({
   redirect_uri,
   redirect_uris,
 }: RedirectURIprops) {
-  let redirect_uris_string: string | null;
+  let redirect_uris_string: string | null = null;
   if (redirect_uris) {
     redirect_uris_string = redirect_uris.join(", ");
   }
@@ -187,12 +185,10 @@ export function InvalidRedirectURI({
             The application has a redirect URI of {redirect_uri} which is not in
             the valid uri list
           </p>
-          {redirect_uris ? (
+          {redirect_uris && (
             <p className="text-sm text-ctp-subtext0">
-              Valid URIs: {redirect_uris_string!}
+              Valid URIs: {redirect_uris_string}
             </p>
-          ) : (
-            <></>
           )}
         </div>
       </div>
