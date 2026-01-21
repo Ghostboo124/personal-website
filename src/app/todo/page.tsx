@@ -8,11 +8,11 @@ import { Titlebar } from "@/components/titlebar";
 import { api } from "../../../convex/_generated/api";
 
 export default function Todo() {
-  const tasks = useQuery(api.tasks.get);
-  const toggleTask = useMutation(api.tasks.toggleTask);
-  const archiveTask = useMutation(api.tasks.archiveTask);
-  const deleteTask = useMutation(api.tasks.deleteTask);
-  const createTask = useMutation(api.tasks.createTask);
+  const tasks = useQuery(api.todo.get);
+  const toggleTask = useMutation(api.todo.toggleTask);
+  const archiveTask = useMutation(api.todo.archiveTask);
+  const deleteTask = useMutation(api.todo.deleteTask);
+  const createTask = useMutation(api.todo.createTask);
 
   const [showArchived, setShowArchived] = useState(false);
   const [isCreating, setIsCreating] = useState(false);

@@ -32,12 +32,13 @@ export const createTask = mutation({
     ctx,
     { taskText },
   ): Promise<{ ok: boolean; taskId?: Id<"todo_list">; error?: string }> => {
-    await ctx.db.insert("todo_list", {
+    const taskId = await ctx.db.insert("todo_list", {
       text: taskText,
       isCompleted: false,
       isArchived: false,
     });
-    return { ok: true };
+
+    return { ok: true, taskId };
   },
 });
 
