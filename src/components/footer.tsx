@@ -4,8 +4,7 @@ export function Footer() {
       <div className="flex flex-col gap-2 text-sm text-ctp-subtext0">
         <p>© 2026 Lexy</p>
         <p className="text-xs text-ctp-subtext0">
-          Built with Next.js, Tailwind CSS, and Shadcn UI with PostHog for
-          analytics.
+          Built with Next.js, Tailwind CSS, Shadcn UI, Posthog, and Convex.
         </p>
       </div>
     </footer>

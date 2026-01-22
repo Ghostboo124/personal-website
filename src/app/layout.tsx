@@ -20,8 +20,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Personal Website",
-  description: "Lexy's Personal Website",
+  title: "Lexy's Personal Website",
+  description:
+    "Lexy's personal website built with Next.js, Tailwind CSS, Shadcn UI, PostHog, and Convex",
+  applicationName: "Lexy's Website",
+  authors: [{ name: "Lexy", url: "https://personal.apcoding.com.au" }],
+  creator: "Lexy Perkins",
+  generator: "Next.js",
+  keywords: [
+    "Lexy",
+    "Lexy Perkins",
+    "Lex",
+    "Lex Perkins",
+    "Ghostboo124",
+    "_Ghostboo__",
+  ],
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: true,
+      "max-video-preview": 0,
+      "max-image-preview": "standard",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
