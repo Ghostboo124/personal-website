@@ -135,7 +135,7 @@ export function SmoothCursor({
             setIsMoving(false);
             movingTimeoutRef.current = null;
           },
-          prefersReducedMotion ? 0 : 500, // 500ms timeout when cursor stops
+          prefersReducedMotion ? 0 : 500,
         );
       }
     };
@@ -166,7 +166,6 @@ export function SmoothCursor({
     rotation,
     scale,
     disableRotation,
-    disableSmooth,
     isMobile,
     prefersReducedMotion,
   ]);
@@ -177,13 +176,11 @@ export function SmoothCursor({
 
   return (
     <motion.div
-      className={`pointer-events-none fixed z-[99999] mix-blend-exclusion transition-opacity ${isMoving || cursorType === "pointer" || isOverPointer ? "opacity-100 duration-300" : "opacity-0 duration-700"}`}
+      className={`pointer-events-none fixed z-99999 translate-x-[-50%] translate-y-[-50%] mix-blend-exclusion transition-[scale,opacity] ${isMoving || cursorType === "pointer" || isOverPointer ? "scale-100 opacity-100 duration-300" : "scale-200 opacity-0 duration-700"}`}
       style={{
         left: cursorX,
         top: cursorY,
-        scale: scale,
-        x: "-50%",
-        y: "-50%",
+        transform: "translateZ(0)",
         backfaceVisibility: "hidden",
         willChange: "transform",
       }}
@@ -198,14 +195,14 @@ export function SmoothCursor({
               opacity: cursorType === "pointer" || isOverPointer ? 1 : 0,
               scale: cursorType === "pointer" || isOverPointer ? 1.2 : 1,
             }}
-            className={`pointer-events-none h-[34px] w-[34px] rounded-full border-2 bg-white shadow-sm transition-all duration-300 ease-out will-change-transform`}
+            className="pointer-events-none h-[34px] w-[34px] rounded-full border-2 bg-white shadow-sm transition-all duration-300 ease-out will-change-transform"
           ></div>
           <motion.div
             style={{
               opacity: !isOverPointer ? 1 : 0,
               rotate: rotation,
             }}
-            className={`pointer-events-none absolute top-0 left-0 h-[34px] w-[34px] rounded-full border-2 shadow-sm drop-shadow-sm transition-opacity duration-300 ease-out will-change-transform dark:border-gray-700`}
+            className="pointer-events-none absolute top-0 left-0 h-[34px] w-[34px] rounded-full border-2 border-white shadow-sm drop-shadow-sm transition-opacity duration-300 ease-out will-change-transform dark:border-gray-700"
           ></motion.div>
         </>
       )}
