@@ -1,4 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
+import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { X } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Doc } from "../../../../../convex/_generated/dataModel";
@@ -53,30 +53,41 @@ export default async function CodebergCallback({ searchParams }: PageProps) {
     ok: boolean;
     error?: string;
     record?: Doc<"oauthStates">;
-  };
+  } = { ok: false };
   let oauthStateOk: {
     ok: boolean;
     error?: string;
     oauth_state?: Doc<"oauthStates">;
-  };
+  } = { ok: false };
+  let deleteOauthStateOk: {
+    ok: boolean;
+    error?: string;
+  } = { ok: false };
   if (state) {
     stateVerifyOk = await fetchQuery(api.oauth.verifyState, { state });
     oauthStateOk = await fetchQuery(api.oauth.getOauthState, { state });
-  } else {
-    stateVerifyOk = { ok: false };
-    oauthStateOk = { ok: false };
+    deleteOauthStateOk = await fetchMutation(api.oauth.deleteState, {
+      stateId: oauthStateOk.oauth_state?._id,
+    });
   }
 
-  if (!isOk || !stateVerifyOk.ok || !oauthStateOk.ok) {
+  if (
+    !isOk ||
+    !stateVerifyOk.ok ||
+    !oauthStateOk.ok ||
+    !deleteOauthStateOk.ok
+  ) {
     return (
       <div className="dark frappe min-h-screen flex items-center justify-center bg-ctp-base p-4">
         <div className="w-full max-w-145 bg-ctp-mantle backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
           {/* Title */}
           <div className="p-8 text-center">
             <h1 className="text-2xl font-bold text-ctp-text">OAuth failed</h1>
-            {!stateVerifyOk.ok && stateVerifyOk.error && (
-              <ErrorMessage errorMessage={stateVerifyOk.error} />
-            )}
+            {!stateVerifyOk.ok &&
+              stateVerifyOk.error &&
+              stateVerifyOk.error !== oauthStateOk.error && (
+                <ErrorMessage errorMessage={stateVerifyOk.error} />
+              )}
 
             {!oauthStateOk.ok && oauthStateOk.error && (
               <ErrorMessage errorMessage={oauthStateOk.error} />
@@ -209,7 +220,7 @@ interface RedirectURIprops {
   errorMessage: string;
 }
 
-export function ErrorMessage({ errorMessage }: RedirectURIprops) {
+function ErrorMessage({ errorMessage }: RedirectURIprops) {
   return (
     <div className="px-8 py-4">
       <div className="bg-ctp-red/10 border border-ctp-red/40 rounded-lg p-4 flex gap-3">

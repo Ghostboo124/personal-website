@@ -101,11 +101,14 @@ export const getOauthState = query({
 });
 
 export const deleteState = mutation({
-  args: { stateId: v.id("oauthStates") },
+  args: { stateId: v.optional(v.id("oauthStates")) },
   handler: async (
     ctx,
     { stateId },
   ): Promise<{ ok: boolean; error?: string }> => {
+    if (!stateId) {
+      return { ok: false, error: "State ID not provided" };
+    }
     const state = await ctx.db.get(stateId);
 
     if (!state) {
