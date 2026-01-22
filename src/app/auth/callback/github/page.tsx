@@ -1,7 +1,7 @@
 import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { X } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
-import type { Doc } from "../../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../../../../convex/_generated/dataModel";
 
 type CallbackSearchParams = {
   code: string;
@@ -199,18 +199,47 @@ export default async function CodebergCallback({ searchParams }: PageProps) {
 
   const user_info_json = await user_info.json();
 
+  let userUpdateOk: {
+    ok: boolean;
+    userId?: Id<"users"> | undefined;
+    error?: string | undefined;
+  } = { ok: false, error: "Could not find information" };
+  if (
+    user_info_json.login &&
+    user_info_json.name &&
+    user_info_json.email &&
+    user_info.ok
+  ) {
+    userUpdateOk = await fetchMutation(api.users.updateUser, {
+      username: user_info_json.login,
+      name: user_info_json.name,
+      email: user_info_json.email,
+      oauth_method: "github",
+    });
+  }
+
   return (
     <div className="dark frappe min-h-screen flex items-center justify-center bg-ctp-base p-4">
       <div className="w-full max-w-145 bg-ctp-mantle backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
-        <div className="p-4 text-ctp-text">
-          <p>{user_info_json.login}</p>
-          <p>{user_info_json.name}</p>
-          <p>{user_info_json.email}</p>
-          <p>
-            {user_info.status}
-            {!user_info.ok && <> - {user_info_json.message}</>}
-          </p>
-        </div>
+        {userUpdateOk.ok && user_info.ok ? (
+          <div className="p-4 text-ctp-text">
+            <p>Username: {user_info_json.login}</p>
+            <p>Full Name: {user_info_json.name}</p>
+            <p>Email: {user_info_json.email}</p>
+            <p>User ID: {userUpdateOk.userId}</p>
+          </div>
+        ) : (
+          <div>
+            {!user_info.ok && (
+              <ErrorMessage
+                errorMessage={`${user_info.status} - ${user_info_json.message}`}
+              />
+            )}
+            {!userUpdateOk.ok && (
+              <ErrorMessage errorMessage={userUpdateOk.error!} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

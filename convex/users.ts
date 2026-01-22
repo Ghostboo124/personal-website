@@ -30,7 +30,7 @@ export const updateUser = mutation({
     if (existingUser) {
       const oauth_methods = existingUser.oauth_methods;
 
-      if (!oauth_method.includes(oauth_method)) {
+      if (!oauth_methods.includes(oauth_method)) {
         oauth_methods.push(oauth_method);
       }
 
