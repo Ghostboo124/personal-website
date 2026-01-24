@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { uuidv7 } from "uuidv7";
+import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const auth = mutation({
@@ -75,7 +76,7 @@ export const checkAuthStatus = query({
       };
     }
 
-    if (session.expiresAt > Date.now()) {
+    if (session.expiresAt < Date.now()) {
       return {
         ok: false,
         reauthNeeded: true,
@@ -92,5 +93,38 @@ export const checkAuthStatus = query({
     }
 
     return { ok: true, reauthNeeded: false, userId: session.userId };
+  },
+});
+
+export const getUserSessions = query({
+  args: { userId: v.string() },
+  handler: async (
+    ctx,
+    { userId },
+  ): Promise<{ ok: boolean; error?: string; sessions?: Doc<"sessions">[] }> => {
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_uid", (q) => q.eq("userId", userId))
+      .collect();
+
+    return { ok: true, sessions };
+  },
+});
+
+export const revokeSession = mutation({
+  args: { sessionId: v.id("sessions") },
+  handler: async (
+    ctx,
+    { sessionId },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const session = await ctx.db.get(sessionId);
+
+    if (!session) {
+      return { ok: false, error: "Session not found" };
+    }
+
+    await ctx.db.delete(sessionId);
+
+    return { ok: true };
   },
 });

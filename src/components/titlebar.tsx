@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { isLoggedIn } from "@/app/auth/profile/actions";
 import { Button } from "./button";
 
-export function Titlebar() {
+export async function Titlebar() {
+  const loggedIn = await isLoggedIn();
+
   return (
     <header className="flex-none p-4 w-full bg-ctp-crust text-ctp-text text-center ">
       <nav className="flex items-center justify-between">
@@ -12,12 +15,15 @@ export function Titlebar() {
         >
           Lexy
         </Link>
-        <Link href="/auth" aria-label="Link to auth page saying 'Login'">
+        <Link
+          href={loggedIn ? "/auth/profile" : "/auth/login"}
+          aria-label={loggedIn ? "Link to profile page" : "Link to login page"}
+        >
           <Button
             variant="outline"
             className="text-lg bg-ctp-mantle text-ctp-mauve"
           >
-            Login
+            {loggedIn ? "Profile" : "Login"}
           </Button>
         </Link>
       </nav>

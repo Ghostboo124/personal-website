@@ -1,11 +1,23 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
-export const get = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("users").collect();
+export const getUser = query({
+  args: { userId: v.id("users") },
+  handler: async (
+    ctx,
+    { userId },
+  ): Promise<{ ok: boolean; error?: string; user?: Doc<"users"> }> => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_id", (q) => q.eq("_id", userId))
+      .first();
+
+    if (!user) {
+      return { ok: false, error: "Could not find user" };
+    }
+
+    return { ok: true, user };
   },
 });
 
@@ -35,8 +47,6 @@ export const updateUser = mutation({
       }
 
       await ctx.db.patch(existingUser._id, {
-        name,
-        username,
         oauth_methods,
         updated_at: Date.now(),
       });
@@ -64,6 +74,69 @@ export const updateUser = mutation({
     });
 
     return { ok: true, userId };
+  },
+});
+
+export const updateUserProfile = mutation({
+  args: {
+    userId: v.id("users"),
+    username: v.optional(v.string()),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (
+    ctx,
+    { userId, username, name, email },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const user = await ctx.db.get(userId);
+
+    if (!user) {
+      return { ok: false, error: "User not found" };
+    }
+
+    const updates: Partial<{
+      username: string;
+      name: string;
+      email: string;
+      updated_at: number;
+    }> = {
+      updated_at: Date.now(),
+    };
+
+    if (username !== undefined && username !== user.username) {
+      const existingUsername = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", username))
+        .first();
+
+      if (existingUsername && existingUsername._id !== userId) {
+        return { ok: false, error: "Username already taken" };
+      }
+      updates.username = username;
+    }
+
+    if (name !== undefined) {
+      updates.name = name;
+    }
+
+    if (email !== undefined) {
+      const normalizedEmail = email.toLowerCase().trim();
+      if (normalizedEmail !== user.email) {
+        const existingEmail = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+          .first();
+
+        if (existingEmail && existingEmail._id !== userId) {
+          return { ok: false, error: "Email already in use" };
+        }
+        updates.email = normalizedEmail;
+      }
+    }
+
+    await ctx.db.patch(userId, updates);
+
+    return { ok: true };
   },
 });
 
