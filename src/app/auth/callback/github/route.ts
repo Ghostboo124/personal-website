@@ -104,39 +104,36 @@ export const GET = async (request: Request) => {
     code_verifier: oauthStateOk.oauth_state!.codeVerifier!,
   });
 
-  const response = await fetch(
-    "https://github.com/login/oauth/access_token",
-    {
-      method: "POST",
-      body: accessTokenURLParams,
-      headers: {
-        Accept: "application/json",
-      },
+  const response = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    body: accessTokenURLParams,
+    headers: {
+      Accept: "application/json",
     },
-  );
+  });
 
   const response_json = await response.json();
 
   if (!response.ok) {
     return Response.json({
       ok: false,
-      errors: [
-        `Access Token: ${response.status}: ${response.statusText}`,
-      ],
+      errors: [`Access Token: ${response.status}: ${response.statusText}`],
     });
   }
 
   const user_info = await fetch("https://api.github.com/user", {
     method: "GET",
     headers: {
-        Authorization: `Bearer ${response_json.access_token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        Accept: "application/json",
-      },
+      Authorization: `Bearer ${response_json.access_token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      Accept: "application/json",
+    },
   });
 
   if (!user_info.ok) {
-    const errorMessages: string[] = [`User Info: ${user_info.status}: ${user_info.statusText}`];
+    const errorMessages: string[] = [
+      `User Info: ${user_info.status}: ${user_info.statusText}`,
+    ];
 
     return Response.json({
       ok: false,
