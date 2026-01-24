@@ -76,7 +76,7 @@ export async function fetchClientMetadata(
       const props = app.properties;
 
       // Helper to extract string values from microformat properties
-      const getString = (prop): string | undefined => {
+      const getString = (prop: unknown): string | undefined => {
         if (Array.isArray(prop) && prop.length > 0) {
           const first = prop[0];
           if (typeof first === "string") return first;
@@ -88,7 +88,7 @@ export async function fetchClientMetadata(
       };
 
       // Helper to extract array of strings
-      const getStringArray = (prop): string[] | undefined => {
+      const getStringArray = (prop: unknown): string[] | undefined => {
         if (Array.isArray(prop)) {
           const strings = prop.filter((item) => typeof item === "string");
           return strings.length > 0 ? strings : undefined;
