@@ -30,4 +30,14 @@ export default defineSchema({
   })
     .index("by_state", ["state"])
     .index("by_code", ["codeChallenge", "codeVerifier"]),
+  sessions: defineTable({
+    token: v.string(),
+    userId: v.string(),
+    expiresAt: v.number(),
+    ipAddress: v.string(),
+    userAgent: v.string(),
+  })
+    .index("by_uid", ["userId"])
+    .index("by_token", ["token"])
+    .index("by_info", ["userAgent", "ipAddress", "userId"]),
 });

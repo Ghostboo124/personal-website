@@ -23,7 +23,8 @@
     "posthog-js": "^1.333.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "uuidv7": "^1.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",

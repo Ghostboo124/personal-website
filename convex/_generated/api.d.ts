@@ -9,6 +9,7 @@
  */
 
 import type * as oauth from "../oauth.js";
+import type * as session from "../session.js";
 import type * as todo from "../todo.js";
 import type * as users from "../users.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   oauth: typeof oauth;
+  session: typeof session;
   todo: typeof todo;
   users: typeof users;
 }>;
