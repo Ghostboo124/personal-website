@@ -1,6 +1,6 @@
-import { uuidv7 } from "uuidv7";
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { uuidv7 } from "uuidv7";
+import { mutation, query } from "./_generated/server";
 
 export const auth = mutation({
   args: { userId: v.id("users"), ipAddress: v.string(), userAgent: v.string() },
@@ -47,4 +47,50 @@ export const auth = mutation({
   },
 });
 
-// export const checkAuthStatus = query({})
+export const checkAuthStatus = query({
+  args: {
+    sessionToken: v.string(),
+    ipAddress: v.string(),
+    userAgent: v.string(),
+  },
+  handler: async (
+    ctx,
+    { sessionToken, ipAddress, userAgent },
+  ): Promise<{
+    ok: boolean;
+    reauthNeeded: boolean;
+    error?: string;
+    userId?: string;
+  }> => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", sessionToken))
+      .first();
+
+    if (!session) {
+      return {
+        ok: false,
+        reauthNeeded: true,
+        error: "Could not find session with that session token",
+      };
+    }
+
+    if (session.expiresAt > Date.now()) {
+      return {
+        ok: false,
+        reauthNeeded: true,
+        error: "Session has expired",
+      };
+    }
+
+    if (session.ipAddress !== ipAddress || session.userAgent !== userAgent) {
+      return {
+        ok: false,
+        reauthNeeded: false,
+        error: "IP Address or User Agent is different to stored ones",
+      };
+    }
+
+    return { ok: true, reauthNeeded: false, userId: session.userId };
+  },
+});

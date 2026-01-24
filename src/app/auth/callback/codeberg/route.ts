@@ -105,10 +105,12 @@ export const GET = async (request: Request) => {
       errorMessages.push(...errors);
     }
 
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "codeberg",
+      errors: JSON.stringify(errorMessages),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const accessTokenURLParams = new URLSearchParams({
@@ -134,14 +136,16 @@ export const GET = async (request: Request) => {
   const response_json: OAuthResponse = await response.json();
 
   if (response_json.success === false) {
-    return Response.json({
-      ok: false,
-      errors: [
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "codeberg",
+      errors: JSON.stringify([
         response.status === 400
           ? "codeVerifier was invalid, please try again"
           : response_json.error_description,
-      ],
+      ]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const user_info = await fetch("https://codeberg.org/api/v1/user", {
@@ -153,12 +157,12 @@ export const GET = async (request: Request) => {
   });
 
   if (!user_info.ok) {
-    const errorMessages: string[] = [user_info.statusText];
-
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "codeberg",
+      errors: JSON.stringify([user_info.statusText]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const user_info_json = await user_info.json();
@@ -194,21 +198,24 @@ export const GET = async (request: Request) => {
   });
 
   if (!sessionAuthOk.ok) {
-    const errorMessages: string[] = [sessionAuthOk.error!];
-
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "codeberg",
+      errors: JSON.stringify([sessionAuthOk.error!]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   await setCookie("sessionId", sessionAuthOk.token!);
 
-  return Response.json({
-    ok: true,
+  const successParams = new URLSearchParams({
+    ok: "true",
+    provider: "codeberg",
     username: user_info_json.login,
     name: user_info_json.full_name,
     email: user_info_json.email,
     id: userUpdateOk.userId!,
   });
+
+  return Response.redirect(new URL(`/auth?${successParams}`, request.url));
 };

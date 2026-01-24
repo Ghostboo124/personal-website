@@ -13,7 +13,17 @@ async function setCookie(name: string, value: string, maxAge?: number) {
   });
 }
 
-export const GET = async (request: Request) => {
+/*
+{
+  ok: true;
+  username?: string;
+  name?: string;
+  email?: string;
+  id?: Id<"users">;
+  errors?: string[];
+}
+*/
+export const GET = async (request: Request): Promise<Response> => {
   // Extract search params from the URL
   const { searchParams } = new URL(request.url);
   const state = searchParams.get("state");
@@ -89,10 +99,12 @@ export const GET = async (request: Request) => {
       errorMessages.push(...errors);
     }
 
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "github",
+      errors: JSON.stringify(errorMessages),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const accessTokenURLParams = new URLSearchParams({
@@ -115,10 +127,12 @@ export const GET = async (request: Request) => {
   const response_json = await response.json();
 
   if (!response.ok) {
-    return Response.json({
-      ok: false,
-      errors: [`Access Token: ${response.status}: ${response.statusText}`],
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "github",
+      errors: JSON.stringify([`Access Token: ${response.status}: ${response.statusText}`]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const user_info = await fetch("https://api.github.com/user", {
@@ -131,14 +145,12 @@ export const GET = async (request: Request) => {
   });
 
   if (!user_info.ok) {
-    const errorMessages: string[] = [
-      `User Info: ${user_info.status}: ${user_info.statusText}`,
-    ];
-
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "github",
+      errors: JSON.stringify([`User Info: ${user_info.status}: ${user_info.statusText}`]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const user_info_json = await user_info.json();
@@ -163,12 +175,12 @@ export const GET = async (request: Request) => {
   }
 
   if (!userUpdateOk.ok) {
-    const errorMessages: string[] = [`User Update: ${userUpdateOk.error!}`];
-
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "github",
+      errors: JSON.stringify([`User Update: ${userUpdateOk.error!}`]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   const sessionAuthOk: {
@@ -183,21 +195,24 @@ export const GET = async (request: Request) => {
   });
 
   if (!sessionAuthOk.ok) {
-    const errorMessages: string[] = [sessionAuthOk.error!];
-
-    return Response.json({
-      ok: false,
-      errors: errorMessages,
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "github",
+      errors: JSON.stringify([sessionAuthOk.error!]),
     });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
   await setCookie("sessionId", sessionAuthOk.token!);
 
-  return Response.json({
-    ok: true,
+  const successParams = new URLSearchParams({
+    ok: "true",
+    provider: "github",
     username: user_info_json.login,
     name: user_info_json.name,
     email: user_info_json.email,
     id: userUpdateOk.userId!,
   });
+
+  return Response.redirect(new URL(`/auth?${successParams}`, request.url));
 };
