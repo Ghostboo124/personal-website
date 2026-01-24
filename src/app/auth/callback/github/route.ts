@@ -130,7 +130,9 @@ export const GET = async (request: Request): Promise<Response> => {
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "github",
-      errors: JSON.stringify([`Access Token: ${response.status}: ${response.statusText}`]),
+      errors: JSON.stringify([
+        `Access Token: ${response.status}: ${response.statusText}`,
+      ]),
     });
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
@@ -148,7 +150,9 @@ export const GET = async (request: Request): Promise<Response> => {
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "github",
-      errors: JSON.stringify([`User Info: ${user_info.status}: ${user_info.statusText}`]),
+      errors: JSON.stringify([
+        `User Info: ${user_info.status}: ${user_info.statusText}`,
+      ]),
     });
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }

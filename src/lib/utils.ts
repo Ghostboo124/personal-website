@@ -69,15 +69,14 @@ export async function fetchClientMetadata(
 
     // Look for h-app or h-x-app
     const app = mfData.items?.find(
-      (item: any) =>
-        item.type?.includes("h-app") || item.type?.includes("h-x-app"),
+      (item) => item.type?.includes("h-app") || item.type?.includes("h-x-app"),
     );
 
     if (app?.properties) {
       const props = app.properties;
 
       // Helper to extract string values from microformat properties
-      const getString = (prop: any): string | undefined => {
+      const getString = (prop): string | undefined => {
         if (Array.isArray(prop) && prop.length > 0) {
           const first = prop[0];
           if (typeof first === "string") return first;
@@ -89,9 +88,9 @@ export async function fetchClientMetadata(
       };
 
       // Helper to extract array of strings
-      const getStringArray = (prop: any): string[] | undefined => {
+      const getStringArray = (prop): string[] | undefined => {
         if (Array.isArray(prop)) {
-          const strings = prop.filter((item: any) => typeof item === "string");
+          const strings = prop.filter((item) => typeof item === "string");
           return strings.length > 0 ? strings : undefined;
         }
         return undefined;
