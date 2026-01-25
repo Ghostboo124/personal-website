@@ -82,7 +82,7 @@ export const getUserIdByUsername = query({
   handler: async (
     ctx,
     { username },
-  ): Promise<{ ok: boolean; error?: String; userId?: Id<"users"> }> => {
+  ): Promise<{ ok: boolean; error?: string; userId?: Id<"users"> }> => {
     const user = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", username))
