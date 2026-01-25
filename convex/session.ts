@@ -128,3 +128,24 @@ export const revokeSession = mutation({
     return { ok: true };
   },
 });
+
+export const revokeSessionByToken = mutation({
+  args: { sessionToken: v.string() },
+  handler: async (
+    ctx,
+    { sessionToken },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", sessionToken))
+      .first();
+
+    if (!session) {
+      return { ok: false, error: "Session not found" };
+    }
+
+    await ctx.db.delete(session._id);
+
+    return { ok: true };
+  },
+});

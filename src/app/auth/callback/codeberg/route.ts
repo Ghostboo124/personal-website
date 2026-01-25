@@ -122,16 +122,26 @@ export const GET = async (request: Request) => {
     code_verifier: oauthStateOk.oauth_state!.codeVerifier!,
   });
 
-  const response = await fetch(
-    "https://codeberg.org/login/oauth/access_token",
-    {
+  let response: Response;
+  try {
+    response = await fetch("https://codeberg.org/login/oauth/access_token", {
       method: "POST",
       body: accessTokenURLParams,
       headers: {
         Accept: "application/json",
       },
-    },
-  );
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch (error) {
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "codeberg",
+      errors: JSON.stringify([
+        "Failed to connect to Codeberg. Please try again.",
+      ]),
+    });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
+  }
 
   const response_json: OAuthResponse = await response.json();
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { isLoggedIn } from "@/app/auth/profile/actions";
 import { Button } from "./button";
+import { LogoutButton } from "./logout-button";
 
 export async function Titlebar() {
   const loggedIn = await isLoggedIn();
@@ -15,17 +16,27 @@ export async function Titlebar() {
         >
           Lexy
         </Link>
-        <Link
-          href={loggedIn ? "/auth/profile" : "/auth/login"}
-          aria-label={loggedIn ? "Link to profile page" : "Link to login page"}
-        >
-          <Button
-            variant="outline"
-            className="text-lg bg-ctp-mantle text-ctp-mauve"
+        <div>
+          <Link
+            href={loggedIn ? "/auth/profile" : "/auth/login"}
+            aria-label={
+              loggedIn ? "Link to profile page" : "Link to login page"
+            }
+            className="p-1"
           >
-            {loggedIn ? "Profile" : "Login"}
-          </Button>
-        </Link>
+            <Button
+              variant="outline"
+              className="text-lg bg-ctp-mantle text-ctp-mauve"
+            >
+              {loggedIn ? "Profile" : "Login"}
+            </Button>
+          </Link>
+          {loggedIn && (
+            <span className="p-1">
+              <LogoutButton />
+            </span>
+          )}
+        </div>
       </nav>
     </header>
   );
