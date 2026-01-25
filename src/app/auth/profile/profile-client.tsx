@@ -1,25 +1,34 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { Doc } from "../../../../convex/_generated/dataModel";
-import { deleteAccount, revokeSession, updateProfile } from "./actions";
+import {
+  deleteAccount,
+  revokeSession,
+  toggleTodoVisibility,
+  updateProfile,
+} from "./actions";
 
 type ProfileClientProps = {
   user: Doc<"users">;
   sessions: Doc<"sessions">[];
   currentSessionToken: string;
+  isTodoPublic: boolean;
 };
 
 export function ProfileClient({
   user,
   sessions,
   currentSessionToken,
+  isTodoPublic: initialIsTodoPublic,
 }: ProfileClientProps) {
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<"profile" | "sessions" | "danger">(
-    "profile",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "profile" | "privacy" | "sessions" | "danger"
+  >("profile");
+  const [todoPublic, setTodoPublic] = useState(initialIsTodoPublic);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -71,6 +80,24 @@ export function ProfileClient({
   const handleDeleteAccount = () => {
     startTransition(async () => {
       await deleteAccount();
+    });
+  };
+
+  const handleToggleTodoVisibility = () => {
+    startTransition(async () => {
+      const result = await toggleTodoVisibility();
+      if (result.ok && result.isTodoPublic !== undefined) {
+        setTodoPublic(result.isTodoPublic);
+        setMessage({
+          type: "success",
+          text: `Todo list is now ${result.isTodoPublic ? "public" : "private"}`,
+        });
+      } else {
+        setMessage({
+          type: "error",
+          text: result.error || "Failed to update visibility",
+        });
+      }
     });
   };
 
@@ -137,6 +164,17 @@ export function ProfileClient({
               }`}
             >
               Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("privacy")}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === "privacy"
+                  ? "text-ctp-lavender border-b-2 border-ctp-lavender"
+                  : "text-ctp-subtext0 hover:text-ctp-text"
+              }`}
+            >
+              Privacy
             </button>
             <button
               type="button"
@@ -246,6 +284,53 @@ export function ProfileClient({
                   To link another OAuth provider, sign in with it from the login
                   page. It will automatically be added to your account.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "privacy" && (
+            <div className="space-y-6">
+              <div className="p-4 bg-ctp-surface0 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-ctp-text mb-1">
+                      Todo List Visibility
+                    </h3>
+                    <p className="text-sm text-ctp-subtext0">
+                      {todoPublic
+                        ? "Your todo list is visible to everyone at "
+                        : "Your todo list is private. Only you can see it at "}
+                      <Link
+                        href={`/todo/${user.username}`}
+                        className="text-ctp-lavender hover:underline"
+                      >
+                        /todo/{user.username}
+                      </Link>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleTodoVisibility}
+                    disabled={isPending}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                      todoPublic
+                        ? "bg-ctp-blue text-ctp-base hover:bg-ctp-blue/80"
+                        : "bg-ctp-surface1 text-ctp-text hover:bg-ctp-surface2"
+                    }`}
+                  >
+                    {todoPublic ? (
+                      <>
+                        <Eye className="w-4 h-4" />
+                        Public
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-4 h-4" />
+                        Private
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

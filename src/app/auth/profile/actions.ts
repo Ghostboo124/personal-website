@@ -134,6 +134,28 @@ export async function isLoggedIn(): Promise<boolean> {
   return authStatus.ok;
 }
 
+export async function toggleTodoVisibility(): Promise<{
+  ok: boolean;
+  isTodoPublic?: boolean;
+  error?: string;
+}> {
+  const authResult = await getAuthenticatedUser();
+
+  if (!authResult.ok) {
+    redirect("/auth/login");
+  }
+
+  const result = await fetchMutation(api.todo.toggleTodoVisibility, {
+    userId: authResult.user._id,
+  });
+
+  if (result.ok) {
+    revalidatePath("/auth/profile");
+  }
+
+  return result;
+}
+
 export async function deleteAccount(): Promise<{
   ok: boolean;
   error?: string;

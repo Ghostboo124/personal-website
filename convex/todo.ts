@@ -1,11 +1,43 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const get = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("todo_list").collect();
+  },
+});
+
+export const getbyUserId = query({
+  args: { userId: v.id("users"), viewerUserId: v.optional(v.id("users")) },
+  handler: async (
+    ctx,
+    { userId, viewerUserId },
+  ): Promise<{
+    ok: boolean;
+    tasks?: Doc<"todo_list">[];
+    isPrivate?: boolean;
+  }> => {
+    const user = await ctx.db.get(userId);
+
+    if (!user) {
+      return { ok: false };
+    }
+
+    const isTodoPublic = user.isTodoPublic ?? true;
+    const isOwner = viewerUserId === userId;
+
+    if (!isTodoPublic && !isOwner) {
+      return { ok: true, tasks: [], isPrivate: true };
+    }
+
+    const tasks = await ctx.db
+      .query("todo_list")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    return { ok: true, tasks, isPrivate: false };
   },
 });
 
@@ -27,15 +59,16 @@ export const toggleTask = mutation({
 });
 
 export const createTask = mutation({
-  args: { taskText: v.string() },
+  args: { taskText: v.string(), userId: v.id("users") },
   handler: async (
     ctx,
-    { taskText },
+    { taskText, userId },
   ): Promise<{ ok: boolean; taskId?: Id<"todo_list">; error?: string }> => {
     const taskId = await ctx.db.insert("todo_list", {
       text: taskText,
       isCompleted: false,
       isArchived: false,
+      userId,
     });
 
     return { ok: true, taskId };
@@ -83,5 +116,34 @@ export const deleteTask = mutation({
     await ctx.db.delete(taskId);
 
     return { ok: true };
+  },
+});
+
+export const toggleTodoVisibility = mutation({
+  args: { userId: v.id("users") },
+  handler: async (
+    ctx,
+    { userId },
+  ): Promise<{ ok: boolean; isTodoPublic?: boolean; error?: string }> => {
+    const user = await ctx.db.get(userId);
+
+    if (!user) {
+      return { ok: false, error: "User not found" };
+    }
+
+    const currentVisibility = user.isTodoPublic ?? true;
+    const newVisibility = !currentVisibility;
+
+    await ctx.db.patch(userId, { isTodoPublic: newVisibility });
+
+    return { ok: true, isTodoPublic: newVisibility };
+  },
+});
+
+export const getTodoVisibility = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }): Promise<boolean> => {
+    const user = await ctx.db.get(userId);
+    return user?.isTodoPublic ?? true;
   },
 });

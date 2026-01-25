@@ -1,7 +1,14 @@
 export const dynamic = "force-dynamic";
 
-import { TodoClient } from "./todo-client";
+import { redirect } from "next/navigation";
+import { getAuthenticatedUser } from "@/app/auth/profile/actions";
 
-export default function TodoPage() {
-  return <TodoClient />;
+export default async function TodoPage() {
+  const authResult = await getAuthenticatedUser();
+
+  if (!authResult.ok) {
+    redirect("/auth/login");
+  }
+
+  redirect(`/todo/${authResult.user.username}`);
 }

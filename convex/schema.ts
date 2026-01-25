@@ -6,7 +6,10 @@ export default defineSchema({
     text: v.string(),
     isCompleted: v.boolean(),
     isArchived: v.boolean(),
-  }).index("by_completed", ["isCompleted"]),
+    userId: v.id("users"),
+  })
+    .index("by_completed", ["isCompleted"])
+    .index("by_userId", ["userId"]),
   users: defineTable({
     username: v.string(),
     name: v.string(),
@@ -14,6 +17,7 @@ export default defineSchema({
     oauth_methods: v.array(v.string()),
     created_at: v.number(),
     updated_at: v.number(),
+    isTodoPublic: v.optional(v.boolean()),
   })
     .index("by_username", ["username"])
     .index("by_email", ["email"])

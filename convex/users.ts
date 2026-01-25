@@ -77,6 +77,25 @@ export const updateUser = mutation({
   },
 });
 
+export const getUserIdByUsername = query({
+  args: { username: v.string() },
+  handler: async (
+    ctx,
+    { username },
+  ): Promise<{ ok: boolean; error?: String; userId?: Id<"users"> }> => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", username))
+      .first();
+
+    if (!user) {
+      return { ok: false, error: "Could not find user with that username" };
+    }
+
+    return { ok: true, userId: user._id };
+  },
+});
+
 export const updateUserProfile = mutation({
   args: {
     userId: v.id("users"),

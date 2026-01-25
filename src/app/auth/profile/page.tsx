@@ -1,4 +1,6 @@
+import { fetchQuery } from "convex/nextjs";
 import { redirect } from "next/navigation";
+import { api } from "../../../../convex/_generated/api";
 import { getAuthenticatedUser } from "./actions";
 import { ProfileClient } from "./profile-client";
 
@@ -30,11 +32,16 @@ export default async function ProfilePage() {
     );
   }
 
+  const isTodoPublic = await fetchQuery(api.todo.getTodoVisibility, {
+    userId: authResult.user._id,
+  });
+
   return (
     <ProfileClient
       user={authResult.user}
       sessions={authResult.sessions}
       currentSessionToken={authResult.currentSessionToken}
+      isTodoPublic={isTodoPublic}
     />
   );
 }
