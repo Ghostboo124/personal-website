@@ -66,7 +66,7 @@ export const updateUser = mutation({
 
     const userId = await ctx.db.insert("users", {
       username,
-      name,
+      name: name,
       email: normalizedEmail,
       oauth_methods: [oauth_method],
       created_at: Date.now(),

@@ -164,15 +164,10 @@ export const GET = async (request: Request): Promise<Response> => {
     userId?: Id<"users">;
     error?: string;
   } = { ok: false, error: "Could not find information" };
-  if (
-    user_info_json.login &&
-    user_info_json.name &&
-    user_info_json.email &&
-    user_info.ok
-  ) {
+  if (user_info_json.login && user_info_json.email && user_info.ok) {
     userUpdateOk = await fetchMutation(api.users.updateUser, {
       username: user_info_json.login,
-      name: user_info_json.name,
+      name: user_info_json.name || "",
       email: user_info_json.email,
       oauth_method: "github",
     });
