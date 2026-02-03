@@ -43,5 +43,6 @@ export default defineSchema({
   })
     .index("by_uid", ["userId"])
     .index("by_token", ["token"])
-    .index("by_info", ["userAgent", "ipAddress", "userId"]),
+    .index("by_info", ["userAgent", "ipAddress", "userId"])
+    .index("by_expiry", ["expiresAt"]),
 });

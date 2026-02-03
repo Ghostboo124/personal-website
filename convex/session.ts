@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { uuidv7 } from "uuidv7";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const auth = mutation({
   args: { userId: v.id("users"), ipAddress: v.string(), userAgent: v.string() },
@@ -102,10 +102,14 @@ export const getUserSessions = query({
     ctx,
     { userId },
   ): Promise<{ ok: boolean; error?: string; sessions?: Doc<"sessions">[] }> => {
-    const sessions = await ctx.db
+    const allSessions = await ctx.db
       .query("sessions")
       .withIndex("by_uid", (q) => q.eq("userId", userId))
       .collect();
+
+    const sessions = allSessions.filter(
+      (session) => session.expiresAt > Date.now(),
+    );
 
     return { ok: true, sessions };
   },
@@ -147,5 +151,23 @@ export const revokeSessionByToken = mutation({
     await ctx.db.delete(session._id);
 
     return { ok: true };
+  },
+});
+
+export const cleanupExpiredSessions = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ deleted: number }> => {
+    const now = Date.now();
+    const expiredSessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_expiry")
+      .filter((q) => q.lt(q.field("expiresAt"), now))
+      .collect();
+
+    for (const session of expiredSessions) {
+      await ctx.db.delete(session._id);
+    }
+
+    return { deleted: expiredSessions.length };
   },
 });

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
 import type * as oauth from "../oauth.js";
 import type * as session from "../session.js";
 import type * as todo from "../todo.js";
@@ -20,6 +21,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   oauth: typeof oauth;
   session: typeof session;
   todo: typeof todo;
