@@ -97,7 +97,7 @@ export const checkAuthStatus = query({
 });
 
 export const getUserSessions = query({
-  args: { userId: v.string() },
+  args: { userId: v.id("users") },
   handler: async (
     ctx,
     { userId },

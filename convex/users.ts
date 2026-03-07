@@ -77,7 +77,9 @@ export const updateUser = mutation({
       return { ok: false, error: "Username already exists" };
     }
 
-    const normalizedEmail = email ? email.toLowerCase().trim() : `${username}@www.lexy.boo`;
+    const normalizedEmail = email
+      ? email.toLowerCase().trim()
+      : `${username}@www.lexy.boo`;
 
     const userId = await ctx.db.insert("users", {
       username,
