@@ -69,7 +69,11 @@ export const toggleTask = mutation({
 });
 
 export const createTask = mutation({
-  args: { taskText: v.string(), userId: v.id("users"), sessionToken: v.string() },
+  args: {
+    taskText: v.string(),
+    userId: v.id("users"),
+    sessionToken: v.string(),
+  },
   handler: async (
     ctx,
     { taskText, userId, sessionToken },
