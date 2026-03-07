@@ -120,15 +120,18 @@ export const GET = async (request: Request) => {
 
   const response_json: OAuthResponse = await response.json();
 
-  if (response_json.success === false) {
+  if (response_json.success === false || !response_json.access_token) {
+    let errorMessage = "Access token not received from Codeberg";
+    if (response.status === 400) {
+      errorMessage = "codeVerifier was invalid, please try again";
+    } else if (response_json.success === false) {
+      errorMessage = response_json.error_description;
+    }
+
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "codeberg",
-      errors: JSON.stringify([
-        response.status === 400
-          ? "codeVerifier was invalid, please try again"
-          : response_json.error_description,
-      ]),
+      errors: JSON.stringify([errorMessage]),
     });
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
@@ -156,6 +159,7 @@ export const GET = async (request: Request) => {
     ok: boolean;
     userId?: Id<"users">;
     error?: string;
+    linkedMethods?: string[];
   } = { ok: false, error: "Could not find information" };
   if (user_info_json.login && user_info.ok) {
     userUpdateOk = await fetchMutation(api.users.updateUser, {
@@ -170,14 +174,15 @@ export const GET = async (request: Request) => {
     // Handle account linking flow when account exists with different OAuth method
     if (
       userUpdateOk.error === "account_exists_with_different_method" &&
-      (userUpdateOk as any).linkedMethods
+      userUpdateOk.linkedMethods &&
+      userUpdateOk.userId
     ) {
       const linkParams = new URLSearchParams({
         ok: "false",
         provider: "codeberg",
         error: "account_exists",
-        linkedMethods: (userUpdateOk as any).linkedMethods.join(","),
-        userId: (userUpdateOk as any).userId,
+        linkedMethods: userUpdateOk.linkedMethods.join(","),
+        userId: userUpdateOk.userId,
         codebergUsername: user_info_json.login,
         codebergName: user_info_json.full_name || "",
         codebergEmail: user_info_json.email || "",

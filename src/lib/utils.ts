@@ -260,11 +260,17 @@ export function resolveUrl(
 export function generateRandomString(length: number): string {
   const possible =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-  const randomBytes = new Uint8Array(length);
-  crypto.getRandomValues(randomBytes);
   let text = "";
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(randomBytes[i] % possible.length);
+  // Use rejection sampling to avoid modulo bias
+  // Only accept random bytes that map evenly to the character set
+  const limit = 256 - (256 % possible.length);
+  while (text.length < length) {
+    const randomBytes = new Uint8Array(1);
+    crypto.getRandomValues(randomBytes);
+    const byte = randomBytes[0];
+    if (byte < limit) {
+      text += possible.charAt(byte % possible.length);
+    }
   }
   return text;
 }

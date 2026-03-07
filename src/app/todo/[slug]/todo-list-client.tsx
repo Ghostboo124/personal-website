@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import {
   Archive,
   CheckCircle2,
@@ -14,13 +14,19 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import {
+  serverArchiveTask,
+  serverCreateTask,
+  serverDeleteTask,
+  serverToggleTask,
+  serverToggleTodoVisibility,
+} from "./actions";
 
 interface TodoListClientProps {
   userId: Id<"users">;
   viewerUserId?: Id<"users">;
   isOwner: boolean;
   isTodoPublic: boolean;
-  sessionToken?: string;
 }
 
 export function TodoListClient({
@@ -28,15 +34,9 @@ export function TodoListClient({
   viewerUserId,
   isOwner,
   isTodoPublic: initialIsTodoPublic,
-  sessionToken,
 }: TodoListClientProps) {
   const router = useRouter();
   const tasksResult = useQuery(api.todo.getbyUserId, { userId, viewerUserId });
-  const toggleTask = useMutation(api.todo.toggleTask);
-  const archiveTask = useMutation(api.todo.archiveTask);
-  const deleteTask = useMutation(api.todo.deleteTask);
-  const createTask = useMutation(api.todo.createTask);
-  const toggleVisibility = useMutation(api.todo.toggleTodoVisibility);
 
   const [showArchived, setShowArchived] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -46,13 +46,13 @@ export function TodoListClient({
   const handleCreateTask = async () => {
     if (!newTaskText.trim()) return;
 
-    await createTask({ taskText: newTaskText, userId, sessionToken });
+    await serverCreateTask(newTaskText, userId);
     setNewTaskText("");
     setIsCreating(false);
   };
 
   const handleToggleVisibility = async () => {
-    const result = await toggleVisibility({ userId, sessionToken });
+    const result = await serverToggleTodoVisibility(userId);
     if (result.ok && result.isTodoPublic !== undefined) {
       setIsTodoPublic(result.isTodoPublic);
       router.refresh();
@@ -204,9 +204,7 @@ export function TodoListClient({
                 <td className="px-6 py-4">
                   {isOwner ? (
                     <button
-                      onClick={() =>
-                        toggleTask({ taskId: task._id, sessionToken })
-                      }
+                      onClick={() => serverToggleTask(task._id)}
                       className="flex items-center justify-center hover:opacity-70 transition-opacity cursor-pointer"
                       type="button"
                       disabled={showArchived}
@@ -245,9 +243,7 @@ export function TodoListClient({
                   (showArchived ? (
                     <td className="px-6 py-4">
                       <button
-                        onClick={() =>
-                          deleteTask({ taskId: task._id, sessionToken })
-                        }
+                        onClick={() => serverDeleteTask(task._id)}
                         className="flex items-center justify-center transition-opacity hover:opacity-70 cursor-pointer text-ctp-red"
                         type="button"
                         title="Delete task"
@@ -258,9 +254,7 @@ export function TodoListClient({
                   ) : (
                     <td className="px-6 py-4">
                       <button
-                        onClick={() =>
-                          archiveTask({ taskId: task._id, sessionToken })
-                        }
+                        onClick={() => serverArchiveTask(task._id)}
                         disabled={!task.isCompleted}
                         className={`flex items-center justify-center transition-opacity ${
                           task.isCompleted

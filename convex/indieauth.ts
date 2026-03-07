@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getAuthenticatedUserId } from "./auth";
 
 export const createAuthorizationCode = mutation({
@@ -95,6 +95,113 @@ export const deleteAuthorizationCode = mutation({
 });
 
 /**
+ * Store IndieAuth authorization request parameters server-side to prevent form tampering.
+ * The state is returned and should be the only value passed in the form.
+ */
+export const storeAuthorizationRequest = mutation({
+  args: {
+    state: v.string(),
+    clientId: v.string(),
+    redirectUri: v.string(),
+    codeChallenge: v.string(),
+    codeChallengeMethod: v.string(),
+    scope: v.string(),
+  },
+  handler: async (
+    ctx,
+    { state, clientId, redirectUri, codeChallenge, codeChallengeMethod, scope },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    // Check if state already exists to prevent replay
+    const existing = await ctx.db
+      .query("oauthStates")
+      .withIndex("by_state", (q) => q.eq("state", state))
+      .first();
+
+    if (existing) {
+      return { ok: false, error: "State already exists" };
+    }
+
+    await ctx.db.insert("oauthStates", {
+      state,
+      clientId,
+      redirectUri,
+      codeChallenge,
+      codeChallengeMethod,
+      scope,
+      expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+    });
+
+    return { ok: true };
+  },
+});
+
+/**
+ * Retrieve stored IndieAuth authorization request parameters by state.
+ * Verifies that the stored parameters match what the form submission claims.
+ */
+export const getStoredAuthorizationRequest = query({
+  args: { state: v.string() },
+  handler: async (
+    ctx,
+    { state },
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    data?: {
+      clientId: string;
+      redirectUri: string;
+      codeChallenge?: string;
+      codeChallengeMethod?: string;
+      scope: string;
+    };
+  }> => {
+    const record = await ctx.db
+      .query("oauthStates")
+      .withIndex("by_state", (q) => q.eq("state", state))
+      .first();
+
+    if (!record) {
+      return { ok: false, error: "Authorization request not found" };
+    }
+
+    if (record.expiresAt < Date.now()) {
+      return { ok: false, error: "Authorization request expired" };
+    }
+
+    return {
+      ok: true,
+      data: {
+        clientId: record.clientId,
+        redirectUri: record.redirectUri,
+        codeChallenge: record.codeChallenge,
+        codeChallengeMethod: record.codeChallengeMethod,
+        scope: record.scope,
+      },
+    };
+  },
+});
+
+/**
+ * Delete stored authorization request after use.
+ */
+export const deleteStoredAuthorizationRequest = mutation({
+  args: { state: v.string() },
+  handler: async (ctx, { state }): Promise<{ ok: boolean; error?: string }> => {
+    const record = await ctx.db
+      .query("oauthStates")
+      .withIndex("by_state", (q) => q.eq("state", state))
+      .first();
+
+    if (!record) {
+      return { ok: false, error: "Authorization request not found" };
+    }
+
+    await ctx.db.delete(record._id);
+    return { ok: true };
+  },
+});
+
+/**
  * Atomically verifies and consumes an authorization code in a single operation.
  * This prevents authorization code replay attacks per OAuth 2.0 / IndieAuth spec.
  */
@@ -142,5 +249,25 @@ export const consumeAuthorizationCode = mutation({
         codeChallengeMethod: record.codeChallengeMethod,
       },
     };
+  },
+});
+
+/**
+ * Cleanup expired IndieAuth authorization codes. Called by cron job.
+ */
+export const cleanupExpiredAuthorizationCodes = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ deleted: number }> => {
+    const now = Date.now();
+    const expiredCodes = await ctx.db
+      .query("indieauthCodes")
+      .filter((q) => q.lt(q.field("expiresAt"), now))
+      .collect();
+
+    for (const code of expiredCodes) {
+      await ctx.db.delete(code._id);
+    }
+
+    return { deleted: expiredCodes.length };
   },
 });

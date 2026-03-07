@@ -78,6 +78,13 @@ export async function updateProfile(
     redirect("/auth/login");
   }
 
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("sessionId")?.value;
+
+  if (!sessionToken) {
+    return { ok: false, error: "Session token not found" };
+  }
+
   const username = formData.get("username") as string | null;
   const name = formData.get("name") as string | null;
   const email = formData.get("email") as string | null;
@@ -87,6 +94,7 @@ export async function updateProfile(
     username: username || undefined,
     name: name || undefined,
     email: email || undefined,
+    sessionToken,
   });
 
   return result;
@@ -154,8 +162,16 @@ export async function toggleTodoVisibility(): Promise<{
     redirect("/auth/login");
   }
 
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("sessionId")?.value;
+
+  if (!sessionToken) {
+    return { ok: false, error: "Session token not found" };
+  }
+
   const result = await fetchMutation(api.todo.toggleTodoVisibility, {
     userId: authResult.user._id,
+    sessionToken,
   });
 
   if (result.ok) {
@@ -182,15 +198,7 @@ export async function deleteAccount(): Promise<{
     return { ok: false, error: "Session token not found" };
   }
 
-  const result = await fetchMutation(api.users.deleteUser, {
-    userId: authResult.user._id,
-    sessionToken,
-  });
-
-  if (!result.ok) {
-    return result;
-  }
-
+  // Revoke all sessions BEFORE deleting the user
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
     userId: authResult.user._id,
     sessionToken,
@@ -205,11 +213,18 @@ export async function deleteAccount(): Promise<{
     }
   }
 
-  if (result.ok) {
-    const cookieStore = await cookies();
-    cookieStore.delete("sessionId");
-    redirect("/auth/login");
+  // Now delete the user
+  const result = await fetchMutation(api.users.deleteUser, {
+    userId: authResult.user._id,
+    sessionToken,
+  });
+
+  if (!result.ok) {
+    return result;
   }
 
-  return result;
+  // Clear cookie and redirect
+  const cookieStore2 = await cookies();
+  cookieStore2.delete("sessionId");
+  redirect("/auth/login");
 }

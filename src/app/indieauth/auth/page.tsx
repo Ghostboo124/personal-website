@@ -70,16 +70,33 @@ async function getAuthenticatedUser(): Promise<{
   };
 }
 
-async function handleAuthorization(formData: FormData) {
+async function handleAuthorization(formData: FormData): Promise<void> {
   "use server";
 
   const action = formData.get("action") as string;
-  const clientId = formData.get("client_id") as string;
-  const redirectUri = formData.get("redirect_uri") as string;
   const state = formData.get("state") as string;
-  const codeChallenge = formData.get("code_challenge") as string;
-  const codeChallengeMethod = formData.get("code_challenge_method") as string;
-  const scope = formData.get("scope") as string;
+
+  // Retrieve stored authorization request parameters from server
+  const storedRequest = await fetchQuery(
+    api.indieauth.getStoredAuthorizationRequest,
+    { state },
+  );
+
+  if (!storedRequest.ok || !storedRequest.data) {
+    // State not found or expired - cannot proceed
+    const redirectUrl = new URL("https://personal.apcoding.com.au/auth");
+    redirectUrl.searchParams.set("ok", "false");
+    redirectUrl.searchParams.set("errors", JSON.stringify([
+      "Invalid or expired authorization request",
+    ]));
+    redirect(redirectUrl.toString());
+  }
+
+  const clientId = storedRequest.data.clientId;
+  const redirectUri = storedRequest.data.redirectUri;
+  const codeChallenge = storedRequest.data.codeChallenge || "";
+  const codeChallengeMethod = storedRequest.data.codeChallengeMethod || "";
+  const scope = storedRequest.data.scope;
 
   // Validate redirect_uri against client's registered redirect_uris
   const clientMetadata = await fetchClientMetadata(clientId);
@@ -93,7 +110,10 @@ async function handleAuthorization(formData: FormData) {
 
   if (!redirectUriValid) {
     // Cannot redirect to untrusted URI; return error without redirecting
-    return { ok: false, error: "Invalid redirect_uri" };
+    const errorUrl = new URL("https://personal.apcoding.com.au/auth");
+    errorUrl.searchParams.set("ok", "false");
+    errorUrl.searchParams.set("errors", JSON.stringify(["Invalid redirect_uri"]));
+    redirect(errorUrl.toString());
   }
 
   const redirectUrl = new URL(redirectUri);
@@ -107,6 +127,10 @@ async function handleAuthorization(formData: FormData) {
   }
 
   if (action === "deny") {
+    // Clean up stored authorization request
+    await fetchMutation(api.indieauth.deleteStoredAuthorizationRequest, {
+      state,
+    });
     redirectUrl.searchParams.set("error", "access_denied");
     redirectUrl.searchParams.set("state", state);
     redirect(redirectUrl.toString());
@@ -138,6 +162,11 @@ async function handleAuthorization(formData: FormData) {
     redirectUrl.searchParams.set("state", state);
     redirect(redirectUrl.toString());
   }
+
+  // Clean up stored authorization request after successful authorization
+  await fetchMutation(api.indieauth.deleteStoredAuthorizationRequest, {
+    state,
+  });
 
   redirectUrl.searchParams.set("code", code);
   redirectUrl.searchParams.set("state", state);
@@ -172,6 +201,16 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
     loginUrl.searchParams.set("redirect", currentUrl.toString());
     redirect(loginUrl.toString());
   }
+
+  // Store authorization request parameters server-side to prevent tampering
+  await fetchMutation(api.indieauth.storeAuthorizationRequest, {
+    state: search_params.state,
+    clientId: search_params.client_id,
+    redirectUri: search_params.redirect_uri,
+    codeChallenge: search_params.code_challenge,
+    codeChallengeMethod: search_params.code_challenge_method,
+    scope: search_params.scope,
+  });
 
   const clientMetadata = await fetchClientMetadata(search_params.client_id);
 
@@ -273,29 +312,8 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
 
         {/* Action Buttons */}
         <form action={handleAuthorization}>
-          <input
-            type="hidden"
-            name="client_id"
-            value={search_params.client_id}
-          />
-          <input
-            type="hidden"
-            name="redirect_uri"
-            value={search_params.redirect_uri}
-          />
+          {/* Only state is passed in form; all other params are stored server-side */}
           <input type="hidden" name="state" value={search_params.state} />
-          <input
-            type="hidden"
-            name="code_challenge"
-            value={search_params.code_challenge}
-          />
-          <input
-            type="hidden"
-            name="code_challenge_method"
-            value={search_params.code_challenge_method}
-          />
-          <input type="hidden" name="scope" value={requestedScopes.join(" ")} />
-          <input type="hidden" name="user_id" value={authResult.userId} />
 
           <div className="p-6 bg-ctp-mantle flex gap-3">
             <button

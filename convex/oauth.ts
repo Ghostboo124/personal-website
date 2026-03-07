@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const saveState = mutation({
   args: {
@@ -152,5 +152,25 @@ export const consumeState = mutation({
     await ctx.db.delete(record._id);
 
     return { ok: true, oauth_state: record };
+  },
+});
+
+/**
+ * Cleanup expired OAuth states. Called by cron job.
+ */
+export const cleanupExpiredStates = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ deleted: number }> => {
+    const now = Date.now();
+    const expiredStates = await ctx.db
+      .query("oauthStates")
+      .filter((q) => q.lt(q.field("expiresAt"), now))
+      .collect();
+
+    for (const state of expiredStates) {
+      await ctx.db.delete(state._id);
+    }
+
+    return { deleted: expiredStates.length };
   },
 });

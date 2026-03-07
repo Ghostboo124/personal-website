@@ -37,7 +37,12 @@ export const updateUser = mutation({
   handler: async (
     ctx,
     { username, name, email, oauth_method },
-  ): Promise<{ ok: boolean; userId?: Id<"users">; error?: string }> => {
+  ): Promise<{
+    ok: boolean;
+    userId?: Id<"users">;
+    error?: string;
+    linkedMethods?: string[];
+  }> => {
     // Only link to existing user if they already have this OAuth method
     // This ensures we don't auto-link to unverified accounts
     let existingUser = null;
@@ -63,10 +68,7 @@ export const updateUser = mutation({
         .withIndex("by_username", (q) => q.eq("username", username))
         .first();
 
-      if (
-        userByUsername &&
-        userByUsername.oauth_methods.includes(oauth_method)
-      ) {
+      if (userByUsername?.oauth_methods.includes(oauth_method)) {
         existingUser = userByUsername;
       }
     }
