@@ -86,9 +86,10 @@ async function handleAuthorization(formData: FormData): Promise<void> {
     // State not found or expired - cannot proceed
     const redirectUrl = new URL("https://personal.apcoding.com.au/auth");
     redirectUrl.searchParams.set("ok", "false");
-    redirectUrl.searchParams.set("errors", JSON.stringify([
-      "Invalid or expired authorization request",
-    ]));
+    redirectUrl.searchParams.set(
+      "errors",
+      JSON.stringify(["Invalid or expired authorization request"]),
+    );
     redirect(redirectUrl.toString());
   }
 
@@ -112,7 +113,10 @@ async function handleAuthorization(formData: FormData): Promise<void> {
     // Cannot redirect to untrusted URI; return error without redirecting
     const errorUrl = new URL("https://personal.apcoding.com.au/auth");
     errorUrl.searchParams.set("ok", "false");
-    errorUrl.searchParams.set("errors", JSON.stringify(["Invalid redirect_uri"]));
+    errorUrl.searchParams.set(
+      "errors",
+      JSON.stringify(["Invalid redirect_uri"]),
+    );
     redirect(errorUrl.toString());
   }
 
@@ -203,14 +207,29 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
   }
 
   // Store authorization request parameters server-side to prevent tampering
-  await fetchMutation(api.indieauth.storeAuthorizationRequest, {
-    state: search_params.state,
-    clientId: search_params.client_id,
-    redirectUri: search_params.redirect_uri,
-    codeChallenge: search_params.code_challenge,
-    codeChallengeMethod: search_params.code_challenge_method,
-    scope: search_params.scope,
-  });
+  const storeResult = await fetchMutation(
+    api.indieauth.storeAuthorizationRequest,
+    {
+      state: search_params.state,
+      clientId: search_params.client_id,
+      redirectUri: search_params.redirect_uri,
+      codeChallenge: search_params.code_challenge,
+      codeChallengeMethod: search_params.code_challenge_method,
+      scope: search_params.scope,
+    },
+  );
+
+  if (!storeResult.ok) {
+    const errorUrl = new URL("https://personal.apcoding.com.au/auth");
+    errorUrl.searchParams.set("ok", "false");
+    errorUrl.searchParams.set(
+      "errors",
+      JSON.stringify([
+        storeResult.error || "Failed to store authorization request",
+      ]),
+    );
+    redirect(errorUrl.toString());
+  }
 
   const clientMetadata = await fetchClientMetadata(search_params.client_id);
 

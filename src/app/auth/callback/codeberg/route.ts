@@ -3,21 +3,19 @@ import { cookies } from "next/headers";
 import { api } from "../../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../../convex/_generated/dataModel";
 
-type OAuthResponseOk = {
-  success: true;
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token: string;
+/**
+ * Codeberg uses standard OAuth 2.0 response format (Gitea-based).
+ * Success response contains access_token.
+ * Error response contains error and optional error_description.
+ */
+type OAuthResponse = {
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  error?: string;
+  error_description?: string;
 };
-
-type OAuthResponseBad = {
-  success: false;
-  error: string;
-  error_description: string;
-};
-
-type OAuthResponse = OAuthResponseOk | OAuthResponseBad;
 
 async function setCookie(name: string, value: string, maxAge?: number) {
   (await cookies()).set(name, value, {
@@ -120,13 +118,11 @@ export const GET = async (request: Request) => {
 
   const response_json: OAuthResponse = await response.json();
 
-  if (response_json.success === false || !response_json.access_token) {
-    let errorMessage = "Access token not received from Codeberg";
-    if (response.status === 400) {
-      errorMessage = "codeVerifier was invalid, please try again";
-    } else if (response_json.success === false) {
-      errorMessage = response_json.error_description;
-    }
+  if (!response.ok || response_json.error || !response_json.access_token) {
+    const errorMessage =
+      response_json.error ||
+      response_json.error_description ||
+      `Access Token: ${response.status}: ${response.statusText}`;
 
     const errorParams = new URLSearchParams({
       ok: "false",

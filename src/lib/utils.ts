@@ -16,9 +16,10 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Validates that a URL is safe for SSRF-protected client metadata fetching
- * Blocks internal IP ranges, localhost, and non-HTTP(S) schemes
+ * Blocks internal IP ranges, localhost, non-HTTP(S) schemes, and performs DNS resolution
+ * to prevent DNS rebinding attacks
  */
-function validateClientIdUrl(url: string): boolean {
+async function validateClientIdUrl(url: string): Promise<boolean> {
   try {
     const parsed = new URL(url);
 
@@ -38,7 +39,7 @@ function validateClientIdUrl(url: string): boolean {
       return false;
     }
 
-    // Block private IP ranges
+    // Block private IP ranges and IPv4-mapped IPv6 addresses
     const privateRanges = [
       /^10\./,
       /^172\.(1[6-9]|2\d|3[01])\./,
@@ -47,8 +48,11 @@ function validateClientIdUrl(url: string): boolean {
       /^169\.254\./, // link-local
       /^fc00:/i, // IPv6 private
       /^fe80:/i, // IPv6 link-local
+      /^::ffff:(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.)/i, // IPv4-mapped private/loopback
+      /^::ffff:169\.254\./i, // IPv4-mapped link-local
     ];
 
+    // First pass: hostname-level validation
     if (privateRanges.some((range) => range.test(hostname))) {
       return false;
     }
@@ -57,9 +61,51 @@ function validateClientIdUrl(url: string): boolean {
     if (
       hostname === "0.0.0.0" ||
       hostname === "::" ||
-      hostname === "::ffff:0:0"
+      hostname === "::ffff:0:0" ||
+      hostname === "::ffff:0.0.0.0"
     ) {
       return false;
+    }
+
+    // Second pass: DNS resolution validation (prevent DNS rebinding)
+    if (typeof window === "undefined") {
+      // Server-side only: resolve hostname and validate resolved IPs
+      try {
+        const dns = await import("node:dns").then((m) => m.promises);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        try {
+          // Try IPv4 resolution
+          const ipv4Addresses = await dns.resolve4(hostname);
+          clearTimeout(timeoutId);
+
+          for (const ip of ipv4Addresses) {
+            if (privateRanges.some((range) => range.test(ip))) {
+              return false;
+            }
+          }
+        } catch {
+          // IPv4 resolution failed, try IPv6
+          try {
+            const ipv6Addresses = await dns.resolve6(hostname);
+            clearTimeout(timeoutId);
+
+            for (const ip of ipv6Addresses) {
+              if (privateRanges.some((range) => range.test(ip))) {
+                return false;
+              }
+            }
+          } catch {
+            clearTimeout(timeoutId);
+            // If DNS resolution fails, be conservative and block
+            return false;
+          }
+        }
+      } catch {
+        // DNS module not available (Edge Runtime, browser, etc.)
+        // Fall back to hostname-only validation
+      }
     }
 
     return true;
@@ -83,7 +129,7 @@ export async function fetchClientMetadata(
   };
 
   // Validate URL before fetching
-  if (!validateClientIdUrl(clientId)) {
+  if (!(await validateClientIdUrl(clientId))) {
     // TODO: Add proper logging - Invalid client_id URL
     return defaultMetadata;
   }

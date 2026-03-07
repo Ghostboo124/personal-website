@@ -1,7 +1,19 @@
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { internalMutation, mutation, query } from "./_generated/server";
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
 
+/**
+ * Save OAuth state during authorization flow.
+ * Called from client-side login page to initiate OAuth flow.
+ * Note: Consider rate-limiting this mutation to prevent state table flooding attacks.
+ * The client provides state, codeChallenge, and codeVerifier which come from
+ * generateRandomString() on the client, so they are ephemeral and not trusted secrets.
+ */
 export const saveState = mutation({
   args: {
     state: v.string(),
@@ -22,6 +34,10 @@ export const saveState = mutation({
   },
 });
 
+/**
+ * Public query to verify OAuth state exists and is valid.
+ * Does NOT return sensitive fields like codeVerifier or codeChallenge.
+ */
 export const verifyState = query({
   args: { state: v.string() },
   handler: async (
@@ -30,7 +46,11 @@ export const verifyState = query({
   ): Promise<{
     ok: boolean;
     error?: string;
-    record?: Doc<"oauthStates">;
+    data?: {
+      clientId: string;
+      redirectUri: string;
+      scope: string;
+    };
   }> => {
     const record = await ctx.db
       .query("oauthStates")
@@ -45,11 +65,23 @@ export const verifyState = query({
       return { ok: false, error: "State record expired" };
     }
 
-    return { ok: true, record };
+    return {
+      ok: true,
+      data: {
+        clientId: record.clientId,
+        redirectUri: record.redirectUri,
+        scope: record.scope,
+      },
+    };
   },
 });
 
-export const getOauthState = query({
+/**
+ * Internal query to retrieve OAuth state by state or code challenge.
+ * Only callable from server-side code, not from the client.
+ * Exposes sensitive fields like codeVerifier and codeChallenge.
+ */
+export const getOauthState = internalQuery({
   args: {
     state: v.optional(v.string()),
     codeChallenge: v.optional(v.string()),

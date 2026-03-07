@@ -36,17 +36,14 @@ export const getbyUserId = query({
 });
 
 export const toggleTask = mutation({
-  args: { taskId: v.id("todo_list"), sessionToken: v.optional(v.string()) },
+  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
   handler: async (
     ctx,
     { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    let userId: string | null = null;
-    if (sessionToken) {
-      userId = await getAuthenticatedUserId(ctx, sessionToken);
-      if (!userId) {
-        return { ok: false, error: "Unauthorized" };
-      }
+    const userId = await getAuthenticatedUserId(ctx, sessionToken);
+    if (!userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     const task = await ctx.db.get(taskId);
@@ -93,17 +90,14 @@ export const createTask = mutation({
 });
 
 export const archiveTask = mutation({
-  args: { taskId: v.id("todo_list"), sessionToken: v.optional(v.string()) },
+  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
   handler: async (
     ctx,
     { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    let userId: string | null = null;
-    if (sessionToken) {
-      userId = await getAuthenticatedUserId(ctx, sessionToken);
-      if (!userId) {
-        return { ok: false, error: "Unauthorized" };
-      }
+    const userId = await getAuthenticatedUserId(ctx, sessionToken);
+    if (!userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     const task = await ctx.db.get(taskId);
@@ -127,17 +121,14 @@ export const archiveTask = mutation({
 });
 
 export const deleteTask = mutation({
-  args: { taskId: v.id("todo_list"), sessionToken: v.optional(v.string()) },
+  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
   handler: async (
     ctx,
     { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    let userId: string | null = null;
-    if (sessionToken) {
-      userId = await getAuthenticatedUserId(ctx, sessionToken);
-      if (!userId) {
-        return { ok: false, error: "Unauthorized" };
-      }
+    const userId = await getAuthenticatedUserId(ctx, sessionToken);
+    if (!userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     const task = await ctx.db.get(taskId);
