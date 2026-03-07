@@ -58,7 +58,6 @@ export async function getAuthenticatedUser(): Promise<AuthResult> {
 
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
     userId: authStatus.userId as Id<"users">,
-    sessionToken,
   });
 
   return {
@@ -198,23 +197,12 @@ export async function deleteAccount(): Promise<{
     return { ok: false, error: "Session token not found" };
   }
 
-  // Delete the user first while the current session is still valid for authentication
-  const result = await fetchMutation(api.users.deleteUser, {
-    userId: authResult.user._id,
-    sessionToken,
-  });
-
-  if (!result.ok) {
-    return result;
-  }
-
-  // After user deletion succeeds, revoke all remaining sessions
-  // (Session lookup will fail since user is deleted, but we do this for cleanup)
+  // First, get all sessions before deleting the user
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
     userId: authResult.user._id,
-    sessionToken,
   });
 
+  // Revoke all sessions before deleting the user (so they remain valid during cleanup)
   if (sessionsResult.sessions) {
     for (const session of sessionsResult.sessions) {
       await fetchMutation(api.session.revokeSession, {
@@ -222,6 +210,16 @@ export async function deleteAccount(): Promise<{
         sessionToken,
       });
     }
+  }
+
+  // Finally, delete the user after all sessions are revoked
+  const result = await fetchMutation(api.users.deleteUser, {
+    userId: authResult.user._id,
+    sessionToken,
+  });
+
+  if (!result.ok) {
+    return result;
   }
 
   // Clear cookie and redirect

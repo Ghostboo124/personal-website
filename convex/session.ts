@@ -89,7 +89,11 @@ export const checkAuthStatus = query({
     // and strict binding causes poor UX without improving security significantly
     // TODO: Add proper logging for IP/user agent changes to detect suspicious activity
     if (session.ipAddress !== ipAddress || session.userAgent !== userAgent) {
-      // Suspicious but allow; log for monitoring
+      return {
+        ok: false,
+        reauthNeeded: true,
+        error: "IP address or User Agent is wrong",
+      };
     }
 
     return { ok: true, reauthNeeded: false, userId: session.userId };
@@ -97,30 +101,11 @@ export const checkAuthStatus = query({
 });
 
 export const getUserSessions = query({
-  args: { userId: v.id("users"), sessionToken: v.string() },
+  args: { userId: v.id("users") },
   handler: async (
     ctx,
-    { userId, sessionToken },
+    { userId },
   ): Promise<{ ok: boolean; error?: string; sessions?: Doc<"sessions">[] }> => {
-    // Verify the caller is authenticated
-    const currentSession = await ctx.db
-      .query("sessions")
-      .withIndex("by_token", (q) => q.eq("token", sessionToken))
-      .first();
-
-    if (!currentSession) {
-      return { ok: false, error: "Unauthorized" };
-    }
-
-    if (currentSession.expiresAt < Date.now()) {
-      return { ok: false, error: "Unauthorized" };
-    }
-
-    // Verify ownership: only allow users to view their own sessions
-    if (currentSession.userId !== userId) {
-      return { ok: false, error: "Unauthorized" };
-    }
-
     const allSessions = await ctx.db
       .query("sessions")
       .withIndex("by_uid", (q) => q.eq("userId", userId))

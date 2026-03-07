@@ -22,11 +22,6 @@ export const getUser = query({
   },
 });
 
-/**
- * Creates or updates a user during OAuth login.
- * Does NOT auto-link to existing users by email/username to prevent account takeover.
- * Always checks if OAuth method already exists on the user before adding it.
- */
 export const updateUser = mutation({
   args: {
     username: v.string(),

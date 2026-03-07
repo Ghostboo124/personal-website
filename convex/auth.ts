@@ -25,9 +25,6 @@ export async function getAuthenticatedUserId(
   return session.userId;
 }
 
-/**
- * Validates that the session token belongs to the specified userId
- */
 export async function verifyUserOwnership(
   ctx: QueryCtx | MutationCtx,
   sessionToken: string,

@@ -7,13 +7,6 @@ import {
   query,
 } from "./_generated/server";
 
-/**
- * Save OAuth state during authorization flow.
- * Called from client-side login page to initiate OAuth flow.
- * Note: Consider rate-limiting this mutation to prevent state table flooding attacks.
- * The client provides state, codeChallenge, and codeVerifier which come from
- * generateRandomString() on the client, so they are ephemeral and not trusted secrets.
- */
 export const saveState = mutation({
   args: {
     state: v.string(),
@@ -34,10 +27,6 @@ export const saveState = mutation({
   },
 });
 
-/**
- * Public query to verify OAuth state exists and is valid.
- * Does NOT return sensitive fields like codeVerifier or codeChallenge.
- */
 export const verifyState = query({
   args: { state: v.string() },
   handler: async (
@@ -76,11 +65,6 @@ export const verifyState = query({
   },
 });
 
-/**
- * Internal query to retrieve OAuth state by state or code challenge.
- * Only callable from server-side code, not from the client.
- * Exposes sensitive fields like codeVerifier and codeChallenge.
- */
 export const getOauthState = internalQuery({
   args: {
     state: v.optional(v.string()),
@@ -152,11 +136,6 @@ export const deleteState = mutation({
   },
 });
 
-/**
- * Atomically verifies and consumes an OAuth state in a single operation.
- * This prevents TOCTOU race conditions where state is deleted before
- * the access token exchange completes.
- */
 export const consumeState = mutation({
   args: { state: v.string() },
   handler: async (
@@ -187,9 +166,6 @@ export const consumeState = mutation({
   },
 });
 
-/**
- * Cleanup expired OAuth states. Called by cron job.
- */
 export const cleanupExpiredStates = internalMutation({
   args: {},
   handler: async (ctx): Promise<{ deleted: number }> => {
