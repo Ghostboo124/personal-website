@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { fetchMutation } from "convex/nextjs";
 import { cookies } from "next/headers";
 import { api } from "../../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../../convex/_generated/dataModel";
@@ -102,7 +102,7 @@ export const GET = async (request: Request) => {
       },
       signal: AbortSignal.timeout(10000),
     });
-  } catch (error) {
+  } catch (_error) {
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "codeberg",

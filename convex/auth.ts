@@ -1,5 +1,4 @@
-import { v } from "convex/values";
-import type { QueryCtx, MutationCtx, Id } from "./_generated/server";
+import type { Id, MutationCtx, QueryCtx } from "./_generated/server";
 
 /**
  * Verifies a session token and returns the authenticated userId
