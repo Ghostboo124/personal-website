@@ -7,7 +7,7 @@ async function setCookie(name: string, value: string, maxAge?: number) {
   (await cookies()).set(name, value, {
     httpOnly: true, // XSS protection
     secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-    sameSite: "strict", // CSRF protection
+    sameSite: "lax", // OAuth callback requires Lax to allow cross-site redirects from provider
     path: "/", // Restrictive scope
     maxAge,
   });
