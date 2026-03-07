@@ -58,6 +58,7 @@ export async function getAuthenticatedUser(): Promise<AuthResult> {
 
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
     userId: authStatus.userId as Id<"users">,
+    sessionToken,
   });
 
   return {
@@ -181,8 +182,18 @@ export async function deleteAccount(): Promise<{
     return { ok: false, error: "Session token not found" };
   }
 
+  const result = await fetchMutation(api.users.deleteUser, {
+    userId: authResult.user._id,
+    sessionToken,
+  });
+
+  if (!result.ok) {
+    return result;
+  }
+
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
     userId: authResult.user._id,
+    sessionToken,
   });
 
   if (sessionsResult.sessions) {
@@ -193,11 +204,6 @@ export async function deleteAccount(): Promise<{
       });
     }
   }
-
-  const result = await fetchMutation(api.users.deleteUser, {
-    userId: authResult.user._id,
-    sessionToken,
-  });
 
   if (result.ok) {
     const cookieStore = await cookies();

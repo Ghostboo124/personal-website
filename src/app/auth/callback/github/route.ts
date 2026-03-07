@@ -49,6 +49,15 @@ export const GET = async (request: Request): Promise<Response> => {
     );
   }
 
+  if (!isOk) {
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "github",
+      errors: JSON.stringify(errors),
+    });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
+  }
+
   let oauthStateOk: {
     ok: boolean;
     error?: string;
@@ -58,15 +67,11 @@ export const GET = async (request: Request): Promise<Response> => {
     oauthStateOk = await fetchMutation(api.oauth.consumeState, { state });
   }
 
-  if (!isOk || !oauthStateOk.ok) {
+  if (!oauthStateOk.ok) {
     const errorMessages: string[] = [];
 
-    if (!oauthStateOk.ok && oauthStateOk.error) {
+    if (oauthStateOk.error) {
       errorMessages.push(oauthStateOk.error);
-    }
-
-    if (!isOk) {
-      errorMessages.push(...errors);
     }
 
     const errorParams = new URLSearchParams({
@@ -145,6 +150,26 @@ export const GET = async (request: Request): Promise<Response> => {
   }
 
   if (!userUpdateOk.ok) {
+    // Handle account linking flow when account exists with different OAuth method
+    if (
+      userUpdateOk.error === "account_exists_with_different_method" &&
+      (userUpdateOk as any).linkedMethods
+    ) {
+      const linkParams = new URLSearchParams({
+        ok: "false",
+        provider: "github",
+        error: "account_exists",
+        linkedMethods: (userUpdateOk as any).linkedMethods.join(","),
+        userId: (userUpdateOk as any).userId,
+        githubUsername: user_info_json.login,
+        githubName: user_info_json.name || "",
+        githubEmail: user_info_json.email || "",
+      });
+      return Response.redirect(
+        new URL(`/auth/link?${linkParams}`, request.url),
+      );
+    }
+
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "github",

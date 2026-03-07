@@ -15,8 +15,63 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Validates that a URL is safe for SSRF-protected client metadata fetching
+ * Blocks internal IP ranges, localhost, and non-HTTP(S) schemes
+ */
+function validateClientIdUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+
+    // Only allow HTTP and HTTPS
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return false;
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Block localhost/loopback
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1"
+    ) {
+      return false;
+    }
+
+    // Block private IP ranges
+    const privateRanges = [
+      /^10\./,
+      /^172\.(1[6-9]|2\d|3[01])\./,
+      /^192\.168\./,
+      /^127\./,
+      /^169\.254\./, // link-local
+      /^fc00:/i, // IPv6 private
+      /^fe80:/i, // IPv6 link-local
+    ];
+
+    if (privateRanges.some((range) => range.test(hostname))) {
+      return false;
+    }
+
+    // Block special addresses
+    if (
+      hostname === "0.0.0.0" ||
+      hostname === "::" ||
+      hostname === "::ffff:0:0"
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fetches client metadata from the client_id URL
  * Parses microformats2 h-app data and falls back to meta tags
+ * Validates URL to prevent SSRF attacks
  */
 export async function fetchClientMetadata(
   clientId: string,
@@ -26,6 +81,12 @@ export async function fetchClientMetadata(
     client_name: extractNameFromUrl(clientId),
     client_uri: clientId,
   };
+
+  // Validate URL before fetching
+  if (!validateClientIdUrl(clientId)) {
+    // TODO: Add proper logging - Invalid client_id URL
+    return defaultMetadata;
+  }
 
   try {
     const response = await fetch(clientId, {

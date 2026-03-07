@@ -22,6 +22,11 @@ export const getUser = query({
   },
 });
 
+/**
+ * Creates or updates a user during OAuth login.
+ * Does NOT auto-link to existing users by email/username to prevent account takeover.
+ * Always checks if OAuth method already exists on the user before adding it.
+ */
 export const updateUser = mutation({
   args: {
     username: v.string(),
@@ -33,41 +38,70 @@ export const updateUser = mutation({
     ctx,
     { username, name, email, oauth_method },
   ): Promise<{ ok: boolean; userId?: Id<"users">; error?: string }> => {
+    // Only link to existing user if they already have this OAuth method
+    // This ensures we don't auto-link to unverified accounts
     let existingUser = null;
 
-    // Try to find user by email if provided
     if (email) {
       const normalizedEmail = email.toLowerCase().trim();
       existingUser = await ctx.db
         .query("users")
         .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
         .first();
+
+      // If found by email, verify they already have this OAuth method
+      // If not, this is a different user and we should not link
+      if (existingUser && !existingUser.oauth_methods.includes(oauth_method)) {
+        existingUser = null;
+      }
     }
 
-    // If not found by email, try to find by username
+    // If still not found, check by username AND oauth_method combination
     if (!existingUser) {
-      existingUser = await ctx.db
+      const userByUsername = await ctx.db
         .query("users")
         .withIndex("by_username", (q) => q.eq("username", username))
         .first();
+
+      if (
+        userByUsername &&
+        userByUsername.oauth_methods.includes(oauth_method)
+      ) {
+        existingUser = userByUsername;
+      }
     }
 
+    // Update existing user if they already use this OAuth method
     if (existingUser) {
-      const oauth_methods = existingUser.oauth_methods;
-
-      if (!oauth_methods.includes(oauth_method)) {
-        oauth_methods.push(oauth_method);
-      }
-
       await ctx.db.patch(existingUser._id, {
-        oauth_methods,
+        name,
+        email: email ? email.toLowerCase().trim() : existingUser.email,
         updated_at: Date.now(),
       });
 
       return { ok: true, userId: existingUser._id };
     }
 
-    // Check if username is taken by another user
+    // Prevent account takeover by not allowing new OAuth method to link to existing account
+    // Check if email is already registered with a different OAuth method
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+      const emailExists = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+        .first();
+
+      if (emailExists) {
+        return {
+          ok: false,
+          error: "account_exists_with_different_method",
+          linkedMethods: emailExists.oauth_methods,
+          userId: emailExists._id,
+        };
+      }
+    }
+
+    // Check if username is taken
     const username_db = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", username))
@@ -77,6 +111,7 @@ export const updateUser = mutation({
       return { ok: false, error: "Username already exists" };
     }
 
+    // Create new user
     const normalizedEmail = email
       ? email.toLowerCase().trim()
       : `${username}@www.lexy.boo`;

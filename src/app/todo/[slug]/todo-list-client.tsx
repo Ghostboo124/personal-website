@@ -20,6 +20,7 @@ interface TodoListClientProps {
   viewerUserId?: Id<"users">;
   isOwner: boolean;
   isTodoPublic: boolean;
+  sessionToken?: string;
 }
 
 export function TodoListClient({
@@ -27,6 +28,7 @@ export function TodoListClient({
   viewerUserId,
   isOwner,
   isTodoPublic: initialIsTodoPublic,
+  sessionToken,
 }: TodoListClientProps) {
   const router = useRouter();
   const tasksResult = useQuery(api.todo.getbyUserId, { userId, viewerUserId });
@@ -44,13 +46,13 @@ export function TodoListClient({
   const handleCreateTask = async () => {
     if (!newTaskText.trim()) return;
 
-    await createTask({ taskText: newTaskText, userId });
+    await createTask({ taskText: newTaskText, userId, sessionToken });
     setNewTaskText("");
     setIsCreating(false);
   };
 
   const handleToggleVisibility = async () => {
-    const result = await toggleVisibility({ userId });
+    const result = await toggleVisibility({ userId, sessionToken });
     if (result.ok && result.isTodoPublic !== undefined) {
       setIsTodoPublic(result.isTodoPublic);
       router.refresh();
@@ -202,7 +204,9 @@ export function TodoListClient({
                 <td className="px-6 py-4">
                   {isOwner ? (
                     <button
-                      onClick={() => toggleTask({ taskId: task._id })}
+                      onClick={() =>
+                        toggleTask({ taskId: task._id, sessionToken })
+                      }
                       className="flex items-center justify-center hover:opacity-70 transition-opacity cursor-pointer"
                       type="button"
                       disabled={showArchived}
@@ -241,7 +245,9 @@ export function TodoListClient({
                   (showArchived ? (
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => deleteTask({ taskId: task._id })}
+                        onClick={() =>
+                          deleteTask({ taskId: task._id, sessionToken })
+                        }
                         className="flex items-center justify-center transition-opacity hover:opacity-70 cursor-pointer text-ctp-red"
                         type="button"
                         title="Delete task"
@@ -252,7 +258,9 @@ export function TodoListClient({
                   ) : (
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => archiveTask({ taskId: task._id })}
+                        onClick={() =>
+                          archiveTask({ taskId: task._id, sessionToken })
+                        }
                         disabled={!task.isCompleted}
                         className={`flex items-center justify-center transition-opacity ${
                           task.isCompleted

@@ -55,6 +55,15 @@ export const GET = async (request: Request) => {
     );
   }
 
+  if (!isOk) {
+    const errorParams = new URLSearchParams({
+      ok: "false",
+      provider: "codeberg",
+      errors: JSON.stringify(errors),
+    });
+    return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
+  }
+
   let oauthStateOk: {
     ok: boolean;
     error?: string;
@@ -64,15 +73,11 @@ export const GET = async (request: Request) => {
     oauthStateOk = await fetchMutation(api.oauth.consumeState, { state });
   }
 
-  if (!isOk || !oauthStateOk.ok) {
+  if (!oauthStateOk.ok) {
     const errorMessages: string[] = [];
 
-    if (!oauthStateOk.ok && oauthStateOk.error) {
+    if (oauthStateOk.error) {
       errorMessages.push(oauthStateOk.error);
-    }
-
-    if (!isOk) {
-      errorMessages.push(...errors);
     }
 
     const errorParams = new URLSearchParams({
@@ -152,21 +157,36 @@ export const GET = async (request: Request) => {
     userId?: Id<"users">;
     error?: string;
   } = { ok: false, error: "Could not find information" };
-  if (
-    user_info_json.login &&
-    user_info_json.full_name &&
-    user_info_json.email &&
-    user_info.ok
-  ) {
+  if (user_info_json.login && user_info.ok) {
     userUpdateOk = await fetchMutation(api.users.updateUser, {
       username: user_info_json.login,
-      name: user_info_json.full_name,
-      email: user_info_json.email,
+      name: user_info_json.full_name || "",
+      email: user_info_json.email || undefined,
       oauth_method: "codeberg",
     });
   }
 
   if (!userUpdateOk.ok) {
+    // Handle account linking flow when account exists with different OAuth method
+    if (
+      userUpdateOk.error === "account_exists_with_different_method" &&
+      (userUpdateOk as any).linkedMethods
+    ) {
+      const linkParams = new URLSearchParams({
+        ok: "false",
+        provider: "codeberg",
+        error: "account_exists",
+        linkedMethods: (userUpdateOk as any).linkedMethods.join(","),
+        userId: (userUpdateOk as any).userId,
+        codebergUsername: user_info_json.login,
+        codebergName: user_info_json.full_name || "",
+        codebergEmail: user_info_json.email || "",
+      });
+      return Response.redirect(
+        new URL(`/auth/link?${linkParams}`, request.url),
+      );
+    }
+
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "codeberg",

@@ -80,12 +80,42 @@ async function handleAuthorization(formData: FormData) {
   const codeChallenge = formData.get("code_challenge") as string;
   const codeChallengeMethod = formData.get("code_challenge_method") as string;
   const scope = formData.get("scope") as string;
-  const userId = formData.get("user_id") as string;
+
+  // Validate redirect_uri against client's registered redirect_uris
+  const clientMetadata = await fetchClientMetadata(clientId);
+
+  let redirectUriValid = true;
+  if (clientId !== redirectUri) {
+    redirectUriValid = clientMetadata.redirect_uris
+      ? clientMetadata.redirect_uris.includes(redirectUri)
+      : false;
+  }
+
+  if (!redirectUriValid) {
+    // Cannot redirect to untrusted URI; return error without redirecting
+    return { ok: false, error: "Invalid redirect_uri" };
+  }
 
   const redirectUrl = new URL(redirectUri);
 
+  // Re-authenticate the user to prevent tampering with the hidden user_id field
+  const authResult = await getAuthenticatedUser();
+  if (!authResult.authenticated || !authResult.userId) {
+    redirectUrl.searchParams.set("error", "access_denied");
+    redirectUrl.searchParams.set("state", state);
+    redirect(redirectUrl.toString());
+  }
+
   if (action === "deny") {
     redirectUrl.searchParams.set("error", "access_denied");
+    redirectUrl.searchParams.set("state", state);
+    redirect(redirectUrl.toString());
+  }
+
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("sessionId")?.value;
+  if (!sessionToken) {
+    redirectUrl.searchParams.set("error", "server_error");
     redirectUrl.searchParams.set("state", state);
     redirect(redirectUrl.toString());
   }
@@ -94,12 +124,13 @@ async function handleAuthorization(formData: FormData) {
 
   const result = await fetchMutation(api.indieauth.createAuthorizationCode, {
     code,
-    userId: userId as Id<"users">,
+    userId: authResult.userId,
     clientId,
     redirectUri,
     scope,
     codeChallenge,
     codeChallengeMethod,
+    sessionToken,
   });
 
   if (!result.ok) {

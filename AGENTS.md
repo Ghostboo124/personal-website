@@ -9,5 +9,6 @@ You should ask for any clarifications you need, and pause to let the user check 
 If PLAN.md already exists, delete it and create a new one.
 
 ## Strict guidelines
+
 **Never** run the dev server, assume it is already running
-**Always** run typechecking and linting and fix all issues found during those steps
+**Always** run typechecking and linting and fix all issues found during those steps, including ones not related to your changes

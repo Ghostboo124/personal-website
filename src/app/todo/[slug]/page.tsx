@@ -6,12 +6,15 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { TodoListClient } from "./todo-list-client";
 
-async function getViewerUserId(): Promise<Id<"users"> | undefined> {
+async function getViewerUserIdAndToken(): Promise<{
+  userId?: Id<"users">;
+  sessionToken?: string;
+}> {
   const cookieStore = await cookies();
   const headerStore = await headers();
 
   const sessionToken = cookieStore.get("sessionId")?.value;
-  if (!sessionToken) return undefined;
+  if (!sessionToken) return {};
 
   const ipAddress =
     headerStore.get("x-forwarded-for")?.split(",")[0].trim() || "Unknown";
@@ -23,9 +26,12 @@ async function getViewerUserId(): Promise<Id<"users"> | undefined> {
     userAgent,
   });
 
-  if (!authStatus.ok || !authStatus.userId) return undefined;
+  if (!authStatus.ok || !authStatus.userId) return {};
 
-  return authStatus.userId as Id<"users">;
+  return {
+    userId: authStatus.userId as Id<"users">,
+    sessionToken,
+  };
 }
 
 export default async function Page(props: PageProps<"/todo/[slug]">) {
@@ -50,7 +56,8 @@ export default async function Page(props: PageProps<"/todo/[slug]">) {
   }
 
   const pageUserId = userResult.userId!;
-  const viewerUserId = await getViewerUserId();
+  const { userId: viewerUserId, sessionToken } =
+    await getViewerUserIdAndToken();
   const isOwner = viewerUserId === pageUserId;
 
   const isTodoPublic = await fetchQuery(api.todo.getTodoVisibility, {
@@ -78,6 +85,7 @@ export default async function Page(props: PageProps<"/todo/[slug]">) {
           viewerUserId={viewerUserId}
           isOwner={isOwner}
           isTodoPublic={isTodoPublic}
+          sessionToken={sessionToken}
         />
       </main>
       <Footer />

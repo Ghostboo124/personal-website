@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import { api } from "../../../../convex/_generated/api";
 
-export async function GET() {
+/**
+ * POST-only logout endpoint to prevent CSRF attacks
+ * GET requests from third-party sites cannot trigger logout
+ */
+export async function POST() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
 

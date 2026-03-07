@@ -3,13 +3,6 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getAuthenticatedUserId, verifyUserOwnership } from "./auth";
 
-export const get = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("todo_list").collect();
-  },
-});
-
 export const getbyUserId = query({
   args: { userId: v.id("users"), viewerUserId: v.optional(v.id("users")) },
   handler: async (
