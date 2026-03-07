@@ -57,7 +57,7 @@ export async function getAuthenticatedUser(): Promise<AuthResult> {
   }
 
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
-    userId: authStatus.userId!,
+    userId: authStatus.userId as Id<"users">,
   });
 
   return {
@@ -174,20 +174,29 @@ export async function deleteAccount(): Promise<{
     redirect("/auth/login");
   }
 
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("sessionId")?.value;
+
+  if (!sessionToken) {
+    return { ok: false, error: "Session token not found" };
+  }
+
   const sessionsResult = await fetchQuery(api.session.getUserSessions, {
-    userId: authResult.user._id as unknown as string,
+    userId: authResult.user._id,
   });
 
   if (sessionsResult.sessions) {
     for (const session of sessionsResult.sessions) {
       await fetchMutation(api.session.revokeSession, {
         sessionId: session._id,
+        sessionToken,
       });
     }
   }
 
   const result = await fetchMutation(api.users.deleteUser, {
     userId: authResult.user._id,
+    sessionToken,
   });
 
   if (result.ok) {
