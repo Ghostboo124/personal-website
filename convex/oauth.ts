@@ -119,3 +119,38 @@ export const deleteState = mutation({
     return { ok: true };
   },
 });
+
+/**
+ * Atomically verifies and consumes an OAuth state in a single operation.
+ * This prevents TOCTOU race conditions where state is deleted before
+ * the access token exchange completes.
+ */
+export const consumeState = mutation({
+  args: { state: v.string() },
+  handler: async (
+    ctx,
+    { state },
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    oauth_state?: Doc<"oauthStates">;
+  }> => {
+    const record = await ctx.db
+      .query("oauthStates")
+      .withIndex("by_state", (q) => q.eq("state", state))
+      .first();
+
+    if (!record) {
+      return { ok: false, error: "State could not be found in database" };
+    }
+
+    if (record.expiresAt < Date.now()) {
+      return { ok: false, error: "State record expired" };
+    }
+
+    // Atomically delete the state and return it
+    await ctx.db.delete(record._id);
+
+    return { ok: true, oauth_state: record };
+  },
+});

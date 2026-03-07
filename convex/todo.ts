@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getAuthenticatedUserId, verifyUserOwnership } from "./auth";
 
 export const get = query({
   args: {},
@@ -42,15 +43,24 @@ export const getbyUserId = query({
 });
 
 export const toggleTask = mutation({
-  args: { taskId: v.id("todo_list") },
+  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { taskId },
+    { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
+    const userId = await getAuthenticatedUserId(ctx, sessionToken);
+    if (!userId) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const task = await ctx.db.get(taskId);
 
     if (!task) {
-      return { ok: false, error: "Task could not be found" }; // TODO: Proper logging for errors
+      return { ok: false, error: "Task could not be found" };
+    }
+
+    if (task.userId !== userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     await ctx.db.patch(taskId, { isCompleted: !task.isCompleted });
@@ -59,11 +69,16 @@ export const toggleTask = mutation({
 });
 
 export const createTask = mutation({
-  args: { taskText: v.string(), userId: v.id("users") },
+  args: { taskText: v.string(), userId: v.id("users"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { taskText, userId },
+    { taskText, userId, sessionToken },
   ): Promise<{ ok: boolean; taskId?: Id<"todo_list">; error?: string }> => {
+    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+    if (!isOwner) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const taskId = await ctx.db.insert("todo_list", {
       text: taskText,
       isCompleted: false,
@@ -76,19 +91,28 @@ export const createTask = mutation({
 });
 
 export const archiveTask = mutation({
-  args: { taskId: v.id("todo_list") },
+  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { taskId },
+    { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
+    const userId = await getAuthenticatedUserId(ctx, sessionToken);
+    if (!userId) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const task = await ctx.db.get(taskId);
 
     if (!task) {
-      return { ok: false, error: "Task could not be found" }; // TODO: Proper logging for errors
+      return { ok: false, error: "Task could not be found" };
+    }
+
+    if (task.userId !== userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     if (task.isArchived) {
-      return { ok: false, error: "Task is already archived" }; // TODO: Proper logging for errors
+      return { ok: false, error: "Task is already archived" };
     }
 
     await ctx.db.patch(taskId, { isArchived: true });
@@ -98,15 +122,24 @@ export const archiveTask = mutation({
 });
 
 export const deleteTask = mutation({
-  args: { taskId: v.id("todo_list") },
+  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { taskId },
+    { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
+    const userId = await getAuthenticatedUserId(ctx, sessionToken);
+    if (!userId) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const task = await ctx.db.get(taskId);
 
     if (!task) {
-      return { ok: false, error: "Task could not be found" }; // TODO: Proper logging for errors
+      return { ok: false, error: "Task could not be found" };
+    }
+
+    if (task.userId !== userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     if (!task.isArchived) {
@@ -120,11 +153,16 @@ export const deleteTask = mutation({
 });
 
 export const toggleTodoVisibility = mutation({
-  args: { userId: v.id("users") },
+  args: { userId: v.id("users"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { userId },
+    { userId, sessionToken },
   ): Promise<{ ok: boolean; isTodoPublic?: boolean; error?: string }> => {
+    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+    if (!isOwner) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const user = await ctx.db.get(userId);
 
     if (!user) {

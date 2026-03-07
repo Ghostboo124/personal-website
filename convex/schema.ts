@@ -48,7 +48,7 @@ export default defineSchema({
     .index("by_code", ["codeChallenge", "codeVerifier"]),
   sessions: defineTable({
     token: v.string(),
-    userId: v.string(),
+    userId: v.id("users"),
     expiresAt: v.number(),
     ipAddress: v.string(),
     userAgent: v.string(),

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { verifyUserOwnership } from "./auth";
 
 export const getUser = query({
   args: { userId: v.id("users") },
@@ -102,11 +103,17 @@ export const updateUserProfile = mutation({
     username: v.optional(v.string()),
     name: v.optional(v.string()),
     email: v.optional(v.string()),
+    sessionToken: v.string(),
   },
   handler: async (
     ctx,
-    { userId, username, name, email },
+    { userId, username, name, email, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
+    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+    if (!isOwner) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const user = await ctx.db.get(userId);
 
     if (!user) {
@@ -160,15 +167,20 @@ export const updateUserProfile = mutation({
 });
 
 export const deleteUser = mutation({
-  args: { userId: v.id("users") },
+  args: { userId: v.id("users"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { userId },
+    { userId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
+    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+    if (!isOwner) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
     const user = await ctx.db.get(userId);
 
     if (!user) {
-      return { ok: false, error: "Task could not be found" };
+      return { ok: false, error: "User not found" };
     }
 
     await ctx.db.delete(userId);

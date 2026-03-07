@@ -28,7 +28,7 @@ export const auth = mutation({
     const token: string = uuidv7();
 
     if (oldSession) {
-      await ctx.db.patch("sessions", oldSession._id, {
+      await ctx.db.patch(oldSession._id, {
         expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
         token,
       });

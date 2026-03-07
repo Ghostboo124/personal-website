@@ -42,57 +42,27 @@ export const GET = async (request: Request): Promise<Response> => {
     errors.push("Code could not be found in the URL parameters");
   }
 
-  if (!process.env.CODEBERG_OAUTH_CLIENT_SECRET) {
+  if (!process.env.GITHUB_OAUTH_CLIENT_SECRET) {
     isOk = false;
     errors.push(
-      "Could not find Codeberg OAuth2 Client Secred (please contact Lexy)",
+      "Could not find GitHub OAuth2 Client Secret (please contact Lexy)",
     );
   }
 
-  let stateVerifyOk: {
-    ok: boolean;
-    error?: string;
-    record?: Doc<"oauthStates">;
-  } = { ok: false };
   let oauthStateOk: {
     ok: boolean;
     error?: string;
     oauth_state?: Doc<"oauthStates">;
   } = { ok: false };
-  let deleteOauthStateOk: {
-    ok: boolean;
-    error?: string;
-  } = { ok: false };
   if (state) {
-    stateVerifyOk = await fetchQuery(api.oauth.verifyState, { state });
-    oauthStateOk = await fetchQuery(api.oauth.getOauthState, { state });
-    deleteOauthStateOk = await fetchMutation(api.oauth.deleteState, {
-      stateId: oauthStateOk.oauth_state?._id,
-    });
+    oauthStateOk = await fetchMutation(api.oauth.consumeState, { state });
   }
 
-  if (
-    !isOk ||
-    !stateVerifyOk.ok ||
-    !oauthStateOk.ok ||
-    !deleteOauthStateOk.ok
-  ) {
+  if (!isOk || !oauthStateOk.ok) {
     const errorMessages: string[] = [];
-
-    if (
-      !stateVerifyOk.ok &&
-      stateVerifyOk.error &&
-      stateVerifyOk.error !== oauthStateOk.error
-    ) {
-      errorMessages.push(stateVerifyOk.error);
-    }
 
     if (!oauthStateOk.ok && oauthStateOk.error) {
       errorMessages.push(oauthStateOk.error);
-    }
-
-    if (!deleteOauthStateOk.ok && deleteOauthStateOk.error) {
-      errorMessages.push(deleteOauthStateOk.error);
     }
 
     if (!isOk) {
@@ -202,15 +172,11 @@ export const GET = async (request: Request): Promise<Response> => {
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
-  await setCookie("sessionId", sessionAuthOk.token!);
+  await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60 * 1000);
 
   const successParams = new URLSearchParams({
     ok: "true",
     provider: "github",
-    username: user_info_json.login,
-    name: user_info_json.name,
-    email: user_info_json.email,
-    id: userUpdateOk.userId!,
   });
 
   return Response.redirect(new URL(`/auth?${successParams}`, request.url));
