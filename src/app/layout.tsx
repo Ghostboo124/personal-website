@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description:
     "Lexy's personal website built with Next.js, Tailwind CSS, Shadcn UI, PostHog, and Convex",
   applicationName: "Lexy's Website",
-  authors: [{ name: "Lexy", url: "https://personal.apcoding.com.au" }],
+  authors: [{ name: "Lexy", url: "https://www.lexy.boo" }],
   creator: "Lexy Perkins",
   generator: "Next.js",
   keywords: [
@@ -61,7 +61,7 @@ export default function RootLayout({
           rel="indieauth-metadata"
           href="/.well-known/oauth-authorization-server"
         />
-        <link rel="canonical" href="https://personal.apcoding.com.au/" />
+        <link rel="canonical" href="https://www.lexy.boo/" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

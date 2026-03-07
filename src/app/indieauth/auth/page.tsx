@@ -84,7 +84,7 @@ async function handleAuthorization(formData: FormData): Promise<void> {
 
   if (!storedRequest.ok || !storedRequest.data) {
     // State not found or expired - cannot proceed
-    const redirectUrl = new URL("https://personal.apcoding.com.au/auth");
+    const redirectUrl = new URL("https://www.lexy.boo/auth");
     redirectUrl.searchParams.set("ok", "false");
     redirectUrl.searchParams.set(
       "errors",
@@ -111,7 +111,7 @@ async function handleAuthorization(formData: FormData): Promise<void> {
 
   if (!redirectUriValid) {
     // Cannot redirect to untrusted URI; return error without redirecting
-    const errorUrl = new URL("https://personal.apcoding.com.au/auth");
+    const errorUrl = new URL("https://www.lexy.boo/auth");
     errorUrl.searchParams.set("ok", "false");
     errorUrl.searchParams.set(
       "errors",
@@ -174,7 +174,7 @@ async function handleAuthorization(formData: FormData): Promise<void> {
 
   redirectUrl.searchParams.set("code", code);
   redirectUrl.searchParams.set("state", state);
-  redirectUrl.searchParams.set("iss", "https://personal.apcoding.com.au/");
+  redirectUrl.searchParams.set("iss", "https://www.lexy.boo/");
   redirect(redirectUrl.toString());
 }
 
@@ -184,9 +184,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
   const authResult = await getAuthenticatedUser();
 
   if (!authResult.authenticated || !authResult.user || !authResult.userId) {
-    const currentUrl = new URL(
-      "https://personal.apcoding.com.au/indieauth/auth",
-    );
+    const currentUrl = new URL("https://www.lexy.boo/indieauth/auth");
     currentUrl.searchParams.set("response_type", search_params.response_type);
     currentUrl.searchParams.set("client_id", search_params.client_id);
     currentUrl.searchParams.set("redirect_uri", search_params.redirect_uri);
@@ -201,7 +199,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
       currentUrl.searchParams.set("me", search_params.me);
     }
 
-    const loginUrl = new URL("https://personal.apcoding.com.au/auth/login");
+    const loginUrl = new URL("https://www.lexy.boo/auth/login");
     loginUrl.searchParams.set("redirect", currentUrl.toString());
     redirect(loginUrl.toString());
   }
@@ -220,7 +218,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
   );
 
   if (!storeResult.ok) {
-    const errorUrl = new URL("https://personal.apcoding.com.au/auth");
+    const errorUrl = new URL("https://www.lexy.boo/auth");
     errorUrl.searchParams.set("ok", "false");
     errorUrl.searchParams.set(
       "errors",
