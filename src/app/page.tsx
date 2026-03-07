@@ -170,15 +170,15 @@ export default function Home() {
               next: "https://ctp-webr.ing/lex/next",
               prev: "https://ctp-webr.ing/lex/previous",
             },
-            // {
-            //   name: "webmaster-keyring",
-            //   url: "https://webmasterwebring.netlify.app",
-            //   next: "https://webmasterwebring.netlify.app?lex-next",
-            //   prev: "https://webmasterwebring.netlify.app?lex-previous",
-            //   image: "/webrings/webmaster.png",
-            //   width: 88,
-            //   height: 31,
-            // },
+            {
+              name: "webmaster-keyring",
+              url: "https://webmasterwebring.netlify.app",
+              next: "https://webmasterwebring.netlify.app?lex-next",
+              prev: "https://webmasterwebring.netlify.app?lex-previous",
+              image: "/webrings/webmaster.png",
+              width: 88,
+              height: 31,
+            },
           ].map((item) => (
             <div key={item.name} className="flex flex-row w-full">
               <Button
