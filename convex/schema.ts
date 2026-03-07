@@ -2,6 +2,18 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  indieauthCodes: defineTable({
+    code: v.string(),
+    userId: v.id("users"),
+    clientId: v.string(),
+    redirectUri: v.string(),
+    scope: v.string(),
+    codeChallenge: v.string(),
+    codeChallengeMethod: v.string(),
+    expiresAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_userId", ["userId"]),
   todo_list: defineTable({
     text: v.string(),
     isCompleted: v.boolean(),

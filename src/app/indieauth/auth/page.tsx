@@ -1,5 +1,10 @@
+import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { AlertTriangle, Mail, User } from "lucide-react";
-import { fetchClientMetadata } from "@/lib/utils";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { fetchClientMetadata, generateRandomString } from "@/lib/utils";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 type IndieAuthSearchParams = {
   response_type: string;
@@ -18,28 +23,140 @@ type PageProps = {
 
 const scopes_supported = ["profile", "email"];
 
-// Mock data for preview
-const mockData = {
-  userName: "Lexy Perkins",
-  userEmail: "perkinsal@student.jpc.qld.edu.au",
-  scopes: ["profile", "email"] as const,
-};
-
 type ScopeType = (typeof scopes_supported)[number];
+
+async function getAuthenticatedUser(): Promise<{
+  authenticated: boolean;
+  userId?: Id<"users">;
+  user?: { name: string; email: string };
+}> {
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+
+  const sessionToken = cookieStore.get("sessionId")?.value;
+  if (!sessionToken) {
+    return { authenticated: false };
+  }
+
+  const ipAddress =
+    headerStore.get("x-forwarded-for")?.split(",")[0].trim() || "Unknown";
+  const userAgent = headerStore.get("user-agent") || "Unknown";
+
+  const sessionCheck = await fetchQuery(api.session.checkAuthStatus, {
+    sessionToken,
+    ipAddress,
+    userAgent,
+  });
+
+  if (!sessionCheck.ok || !sessionCheck.userId) {
+    return { authenticated: false };
+  }
+
+  const userResult = await fetchQuery(api.users.getUser, {
+    userId: sessionCheck.userId as Id<"users">,
+  });
+
+  if (!userResult.ok || !userResult.user) {
+    return { authenticated: false };
+  }
+
+  return {
+    authenticated: true,
+    userId: userResult.user._id,
+    user: {
+      name: userResult.user.name,
+      email: userResult.user.email,
+    },
+  };
+}
+
+async function handleAuthorization(formData: FormData) {
+  "use server";
+
+  const action = formData.get("action") as string;
+  const clientId = formData.get("client_id") as string;
+  const redirectUri = formData.get("redirect_uri") as string;
+  const state = formData.get("state") as string;
+  const codeChallenge = formData.get("code_challenge") as string;
+  const codeChallengeMethod = formData.get("code_challenge_method") as string;
+  const scope = formData.get("scope") as string;
+  const userId = formData.get("user_id") as string;
+
+  const redirectUrl = new URL(redirectUri);
+
+  if (action === "deny") {
+    redirectUrl.searchParams.set("error", "access_denied");
+    redirectUrl.searchParams.set("state", state);
+    redirect(redirectUrl.toString());
+  }
+
+  const code = generateRandomString(64);
+
+  const result = await fetchMutation(api.indieauth.createAuthorizationCode, {
+    code,
+    userId: userId as Id<"users">,
+    clientId,
+    redirectUri,
+    scope,
+    codeChallenge,
+    codeChallengeMethod,
+  });
+
+  if (!result.ok) {
+    redirectUrl.searchParams.set("error", "server_error");
+    redirectUrl.searchParams.set("state", state);
+    redirect(redirectUrl.toString());
+  }
+
+  redirectUrl.searchParams.set("code", code);
+  redirectUrl.searchParams.set("state", state);
+  redirectUrl.searchParams.set("iss", "https://personal.apcoding.com.au/");
+  redirect(redirectUrl.toString());
+}
 
 export default async function AuthEndpoint({ searchParams }: PageProps) {
   const search_params = await searchParams;
+
+  const authResult = await getAuthenticatedUser();
+
+  if (!authResult.authenticated || !authResult.user || !authResult.userId) {
+    const currentUrl = new URL(
+      "https://personal.apcoding.com.au/indieauth/auth",
+    );
+    currentUrl.searchParams.set("response_type", search_params.response_type);
+    currentUrl.searchParams.set("client_id", search_params.client_id);
+    currentUrl.searchParams.set("redirect_uri", search_params.redirect_uri);
+    currentUrl.searchParams.set("state", search_params.state);
+    currentUrl.searchParams.set("code_challenge", search_params.code_challenge);
+    currentUrl.searchParams.set(
+      "code_challenge_method",
+      search_params.code_challenge_method,
+    );
+    currentUrl.searchParams.set("scope", search_params.scope);
+    if (search_params.me) {
+      currentUrl.searchParams.set("me", search_params.me);
+    }
+
+    const loginUrl = new URL("https://personal.apcoding.com.au/auth/login");
+    loginUrl.searchParams.set("redirect", currentUrl.toString());
+    redirect(loginUrl.toString());
+  }
+
   const clientMetadata = await fetchClientMetadata(search_params.client_id);
 
   const appName = clientMetadata.client_name || "Unknown App";
   const appNameFormatted = appName.charAt(0).toUpperCase() + appName.slice(1);
 
-  let redirect_uri_valid: boolean = true;
+  let redirect_uri_valid = true;
   if (search_params.client_id !== search_params.redirect_uri) {
     redirect_uri_valid = clientMetadata.redirect_uris
       ? clientMetadata.redirect_uris?.includes(search_params.redirect_uri)
       : false;
   }
+
+  const requestedScopes = search_params.scope
+    ? search_params.scope.split(" ").filter((s) => scopes_supported.includes(s))
+    : [];
 
   const scopeIcons: Record<ScopeType, React.ReactElement> = {
     profile: <User className="w-5 h-5 text-ctp-lavender" />,
@@ -52,11 +169,11 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
   > = {
     profile: {
       title: "See your name and profile information",
-      detail: `Name: ${mockData.userName}`,
+      detail: `Name: ${authResult.user.name}`,
     },
     email: {
       title: "See your email address",
-      detail: `Email: ${mockData.userEmail}`,
+      detail: `Email: ${authResult.user.email}`,
     },
   };
 
@@ -92,7 +209,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
           </h2>
 
           <div className="space-y-3">
-            {mockData.scopes.map((scope) => {
+            {requestedScopes.map((scope) => {
               const info = scopeLabels[scope];
               if (!info) return null;
 
@@ -124,34 +241,65 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="p-6 bg-ctp-mantle flex gap-3">
-          <button
-            className="flex-1 px-6 py-3 bg-ctp-red hover:bg-ctp-red-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
-            type="button"
-          >
-            Deny
-          </button>
-          <button
-            className="flex-1 px-6 py-3 bg-ctp-green hover:bg-ctp-green-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-            type="button"
-          >
-            Authorize
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+        <form action={handleAuthorization}>
+          <input
+            type="hidden"
+            name="client_id"
+            value={search_params.client_id}
+          />
+          <input
+            type="hidden"
+            name="redirect_uri"
+            value={search_params.redirect_uri}
+          />
+          <input type="hidden" name="state" value={search_params.state} />
+          <input
+            type="hidden"
+            name="code_challenge"
+            value={search_params.code_challenge}
+          />
+          <input
+            type="hidden"
+            name="code_challenge_method"
+            value={search_params.code_challenge_method}
+          />
+          <input type="hidden" name="scope" value={requestedScopes.join(" ")} />
+          <input type="hidden" name="user_id" value={authResult.userId} />
+
+          <div className="p-6 bg-ctp-mantle flex gap-3">
+            <button
+              className="flex-1 px-6 py-3 bg-ctp-red hover:bg-ctp-red-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
+              type="submit"
+              name="action"
+              value="deny"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-        </div>
+              Deny
+            </button>
+            <button
+              className="flex-1 px-6 py-3 bg-ctp-green hover:bg-ctp-green-700 text-ctp-base font-semibold rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              type="submit"
+              name="action"
+              value="authorize"
+              disabled={!redirect_uri_valid}
+            >
+              Authorize
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
