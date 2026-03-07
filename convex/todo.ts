@@ -43,14 +43,17 @@ export const getbyUserId = query({
 });
 
 export const toggleTask = mutation({
-  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
+  args: { taskId: v.id("todo_list"), sessionToken: v.optional(v.string()) },
   handler: async (
     ctx,
     { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    const userId = await getAuthenticatedUserId(ctx, sessionToken);
-    if (!userId) {
-      return { ok: false, error: "Unauthorized" };
+    let userId: string | null = null;
+    if (sessionToken) {
+      userId = await getAuthenticatedUserId(ctx, sessionToken);
+      if (!userId) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const task = await ctx.db.get(taskId);
@@ -72,15 +75,17 @@ export const createTask = mutation({
   args: {
     taskText: v.string(),
     userId: v.id("users"),
-    sessionToken: v.string(),
+    sessionToken: v.optional(v.string()),
   },
   handler: async (
     ctx,
     { taskText, userId, sessionToken },
   ): Promise<{ ok: boolean; taskId?: Id<"todo_list">; error?: string }> => {
-    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
-    if (!isOwner) {
-      return { ok: false, error: "Unauthorized" };
+    if (sessionToken) {
+      const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+      if (!isOwner) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const taskId = await ctx.db.insert("todo_list", {
@@ -95,14 +100,17 @@ export const createTask = mutation({
 });
 
 export const archiveTask = mutation({
-  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
+  args: { taskId: v.id("todo_list"), sessionToken: v.optional(v.string()) },
   handler: async (
     ctx,
     { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    const userId = await getAuthenticatedUserId(ctx, sessionToken);
-    if (!userId) {
-      return { ok: false, error: "Unauthorized" };
+    let userId: string | null = null;
+    if (sessionToken) {
+      userId = await getAuthenticatedUserId(ctx, sessionToken);
+      if (!userId) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const task = await ctx.db.get(taskId);
@@ -126,14 +134,17 @@ export const archiveTask = mutation({
 });
 
 export const deleteTask = mutation({
-  args: { taskId: v.id("todo_list"), sessionToken: v.string() },
+  args: { taskId: v.id("todo_list"), sessionToken: v.optional(v.string()) },
   handler: async (
     ctx,
     { taskId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    const userId = await getAuthenticatedUserId(ctx, sessionToken);
-    if (!userId) {
-      return { ok: false, error: "Unauthorized" };
+    let userId: string | null = null;
+    if (sessionToken) {
+      userId = await getAuthenticatedUserId(ctx, sessionToken);
+      if (!userId) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const task = await ctx.db.get(taskId);
@@ -157,14 +168,16 @@ export const deleteTask = mutation({
 });
 
 export const toggleTodoVisibility = mutation({
-  args: { userId: v.id("users"), sessionToken: v.string() },
+  args: { userId: v.id("users"), sessionToken: v.optional(v.string()) },
   handler: async (
     ctx,
     { userId, sessionToken },
   ): Promise<{ ok: boolean; isTodoPublic?: boolean; error?: string }> => {
-    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
-    if (!isOwner) {
-      return { ok: false, error: "Unauthorized" };
+    if (sessionToken) {
+      const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+      if (!isOwner) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const user = await ctx.db.get(userId);

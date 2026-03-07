@@ -96,12 +96,13 @@ export const GET = async (request: Request): Promise<Response> => {
 
   const response_json = await response.json();
 
-  if (!response.ok) {
+  if (!response.ok || response_json.error || !response_json.access_token) {
     const errorParams = new URLSearchParams({
       ok: "false",
       provider: "github",
       errors: JSON.stringify([
-        `Access Token: ${response.status}: ${response.statusText}`,
+        response_json.error ||
+          `Access Token: ${response.status}: ${response.statusText}`,
       ]),
     });
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
@@ -134,11 +135,11 @@ export const GET = async (request: Request): Promise<Response> => {
     userId?: Id<"users">;
     error?: string;
   } = { ok: false, error: "Could not find information" };
-  if (user_info_json.login && user_info_json.email && user_info.ok) {
+  if (user_info_json.login && user_info.ok) {
     userUpdateOk = await fetchMutation(api.users.updateUser, {
       username: user_info_json.login,
       name: user_info_json.name || "",
-      email: user_info_json.email,
+      email: user_info_json.email || undefined,
       oauth_method: "github",
     });
   }
@@ -172,7 +173,7 @@ export const GET = async (request: Request): Promise<Response> => {
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
-  await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60 * 1000);
+  await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60);
 
   const successParams = new URLSearchParams({
     ok: "true",

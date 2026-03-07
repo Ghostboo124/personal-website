@@ -199,9 +199,11 @@ export function resolveUrl(
 export function generateRandomString(length: number): string {
   const possible =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const randomBytes = new Uint8Array(length);
+  crypto.getRandomValues(randomBytes);
   let text = "";
   for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+    text += possible.charAt(randomBytes[i] % possible.length);
   }
   return text;
 }

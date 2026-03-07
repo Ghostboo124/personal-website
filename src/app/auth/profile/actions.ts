@@ -100,8 +100,16 @@ export async function revokeSession(
     redirect("/auth/login");
   }
 
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("sessionId")?.value;
+
+  if (!sessionToken) {
+    return { ok: false, error: "Session token not found" };
+  }
+
   const result = await fetchMutation(api.session.revokeSession, {
     sessionId: sessionId as Id<"sessions">,
+    sessionToken,
   });
 
   if (result.ok) {

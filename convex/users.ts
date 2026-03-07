@@ -26,19 +26,31 @@ export const updateUser = mutation({
   args: {
     username: v.string(),
     name: v.string(),
-    email: v.string(),
+    email: v.optional(v.string()),
     oauth_method: v.string(),
   },
   handler: async (
     ctx,
     { username, name, email, oauth_method },
   ): Promise<{ ok: boolean; userId?: Id<"users">; error?: string }> => {
-    const normalizedEmail = email.toLowerCase().trim();
+    let existingUser = null;
 
-    const existingUser = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
-      .first();
+    // Try to find user by email if provided
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+      existingUser = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+        .first();
+    }
+
+    // If not found by email, try to find by username
+    if (!existingUser) {
+      existingUser = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", username))
+        .first();
+    }
 
     if (existingUser) {
       const oauth_methods = existingUser.oauth_methods;
@@ -55,7 +67,7 @@ export const updateUser = mutation({
       return { ok: true, userId: existingUser._id };
     }
 
-    // Check if username is taken
+    // Check if username is taken by another user
     const username_db = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", username))
@@ -64,6 +76,8 @@ export const updateUser = mutation({
     if (username_db) {
       return { ok: false, error: "Username already exists" };
     }
+
+    const normalizedEmail = email ? email.toLowerCase().trim() : `${username}@www.lexy.boo`;
 
     const userId = await ctx.db.insert("users", {
       username,
@@ -103,15 +117,17 @@ export const updateUserProfile = mutation({
     username: v.optional(v.string()),
     name: v.optional(v.string()),
     email: v.optional(v.string()),
-    sessionToken: v.string(),
+    sessionToken: v.optional(v.string()),
   },
   handler: async (
     ctx,
     { userId, username, name, email, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
-    if (!isOwner) {
-      return { ok: false, error: "Unauthorized" };
+    if (sessionToken) {
+      const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+      if (!isOwner) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const user = await ctx.db.get(userId);
@@ -167,14 +183,16 @@ export const updateUserProfile = mutation({
 });
 
 export const deleteUser = mutation({
-  args: { userId: v.id("users"), sessionToken: v.string() },
+  args: { userId: v.id("users"), sessionToken: v.optional(v.string()) },
   handler: async (
     ctx,
     { userId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
-    if (!isOwner) {
-      return { ok: false, error: "Unauthorized" };
+    if (sessionToken) {
+      const isOwner = await verifyUserOwnership(ctx, sessionToken, userId);
+      if (!isOwner) {
+        return { ok: false, error: "Unauthorized" };
+      }
     }
 
     const user = await ctx.db.get(userId);

@@ -116,15 +116,35 @@ export const getUserSessions = query({
 });
 
 export const revokeSession = mutation({
-  args: { sessionId: v.id("sessions") },
+  args: { sessionId: v.id("sessions"), sessionToken: v.string() },
   handler: async (
     ctx,
-    { sessionId },
+    { sessionId, sessionToken },
   ): Promise<{ ok: boolean; error?: string }> => {
-    const session = await ctx.db.get(sessionId);
+    // Verify the caller is authenticated
+    const currentSession = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", sessionToken))
+      .first();
 
-    if (!session) {
+    if (!currentSession) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
+    if (currentSession.expiresAt < Date.now()) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
+    // Get the session to revoke
+    const sessionToRevoke = await ctx.db.get(sessionId);
+
+    if (!sessionToRevoke) {
       return { ok: false, error: "Session not found" };
+    }
+
+    // Verify ownership: the session being revoked must belong to the authenticated user
+    if (sessionToRevoke.userId !== currentSession.userId) {
+      return { ok: false, error: "Unauthorized" };
     }
 
     await ctx.db.delete(sessionId);

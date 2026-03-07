@@ -195,7 +195,7 @@ export const GET = async (request: Request) => {
     return Response.redirect(new URL(`/auth?${errorParams}`, request.url));
   }
 
-  await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60 * 1000);
+  await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60);
 
   const successParams = new URLSearchParams({
     ok: "true",

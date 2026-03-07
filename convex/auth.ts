@@ -1,4 +1,5 @@
-import type { Id, MutationCtx, QueryCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Verifies a session token and returns the authenticated userId
