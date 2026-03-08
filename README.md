@@ -1,6 +1,6 @@
 # Personal Website
 
-This is my personal website, located at [personal.apcoding.com.au](https://personal.apcoding.com.au) and is hosted through Vercel
+This is my personal website, located at [lexy.boo](https://www.lexy.boo) and is hosted through Vercel
 
 This git repository is hosted on two places
 

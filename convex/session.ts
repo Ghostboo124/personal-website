@@ -1,0 +1,197 @@
+import { v } from "convex/values";
+import { uuidv7 } from "uuidv7";
+import type { Doc } from "./_generated/dataModel";
+import { internalMutation, mutation, query } from "./_generated/server";
+
+export const auth = mutation({
+  args: { userId: v.id("users"), ipAddress: v.string(), userAgent: v.string() },
+  handler: async (
+    ctx,
+    { userId, ipAddress, userAgent },
+  ): Promise<{ ok: boolean; error?: string; token?: string }> => {
+    const userInfo = await ctx.db.get(userId);
+
+    if (!userInfo) {
+      return { ok: false, error: "User could not be found" };
+    }
+
+    const oldSession = await ctx.db
+      .query("sessions")
+      .withIndex("by_info", (q) =>
+        q
+          .eq("userAgent", userAgent)
+          .eq("ipAddress", ipAddress)
+          .eq("userId", userId),
+      )
+      .first();
+
+    const token: string = uuidv7();
+
+    if (oldSession) {
+      await ctx.db.patch(oldSession._id, {
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        token,
+      });
+
+      return { ok: true, token };
+    }
+
+    await ctx.db.insert("sessions", {
+      token,
+      userId,
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ipAddress,
+      userAgent,
+    });
+
+    return { ok: true, token };
+  },
+});
+
+export const checkAuthStatus = query({
+  args: {
+    sessionToken: v.string(),
+    ipAddress: v.string(),
+    userAgent: v.string(),
+  },
+  handler: async (
+    ctx,
+    { sessionToken, ipAddress, userAgent },
+  ): Promise<{
+    ok: boolean;
+    reauthNeeded: boolean;
+    error?: string;
+    userId?: string;
+  }> => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", sessionToken))
+      .first();
+
+    if (!session) {
+      return {
+        ok: false,
+        reauthNeeded: true,
+        error: "Could not find session with that session token",
+      };
+    }
+
+    if (session.expiresAt < Date.now()) {
+      return {
+        ok: false,
+        reauthNeeded: true,
+        error: "Session has expired",
+      };
+    }
+
+    // Log suspicious activity if IP or user agent changed, but don't reject
+    // IP addresses can change legitimately (mobile networks, VPNs, load balancers)
+    // and strict binding causes poor UX without improving security significantly
+    // TODO: Add proper logging for IP/user agent changes to detect suspicious activity
+    if (session.ipAddress !== ipAddress || session.userAgent !== userAgent) {
+      return {
+        ok: false,
+        reauthNeeded: true,
+        error: "IP address or User Agent is wrong",
+      };
+    }
+
+    return { ok: true, reauthNeeded: false, userId: session.userId };
+  },
+});
+
+export const getUserSessions = query({
+  args: { userId: v.id("users") },
+  handler: async (
+    ctx,
+    { userId },
+  ): Promise<{ ok: boolean; error?: string; sessions?: Doc<"sessions">[] }> => {
+    const allSessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_uid", (q) => q.eq("userId", userId))
+      .collect();
+
+    const sessions = allSessions.filter(
+      (session) => session.expiresAt > Date.now(),
+    );
+
+    return { ok: true, sessions };
+  },
+});
+
+export const revokeSession = mutation({
+  args: { sessionId: v.id("sessions"), sessionToken: v.string() },
+  handler: async (
+    ctx,
+    { sessionId, sessionToken },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    // Verify the caller is authenticated
+    const currentSession = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", sessionToken))
+      .first();
+
+    if (!currentSession) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
+    if (currentSession.expiresAt < Date.now()) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
+    // Get the session to revoke
+    const sessionToRevoke = await ctx.db.get(sessionId);
+
+    if (!sessionToRevoke) {
+      return { ok: false, error: "Session not found" };
+    }
+
+    // Verify ownership: the session being revoked must belong to the authenticated user
+    if (sessionToRevoke.userId !== currentSession.userId) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
+    await ctx.db.delete(sessionId);
+
+    return { ok: true };
+  },
+});
+
+export const revokeSessionByToken = mutation({
+  args: { sessionToken: v.string() },
+  handler: async (
+    ctx,
+    { sessionToken },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", sessionToken))
+      .first();
+
+    if (!session) {
+      return { ok: false, error: "Session not found" };
+    }
+
+    await ctx.db.delete(session._id);
+
+    return { ok: true };
+  },
+});
+
+export const cleanupExpiredSessions = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ deleted: number }> => {
+    const now = Date.now();
+    const expiredSessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_expiry")
+      .filter((q) => q.lt(q.field("expiresAt"), now))
+      .collect();
+
+    for (const session of expiredSessions) {
+      await ctx.db.delete(session._id);
+    }
+
+    return { deleted: expiredSessions.length };
+  },
+});
