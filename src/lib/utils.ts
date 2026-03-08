@@ -30,6 +30,17 @@ async function validateClientIdUrl(url: string): Promise<boolean> {
 
     const hostname = parsed.hostname.toLowerCase();
 
+    // Allow localhost in development mode
+    if (process.env.NODE_ENV === "development") {
+      if (
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname === "::1"
+      ) {
+        return true;
+      }
+    }
+
     // Block localhost/loopback
     if (
       hostname === "localhost" ||

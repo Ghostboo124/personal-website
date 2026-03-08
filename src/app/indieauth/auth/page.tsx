@@ -2,10 +2,15 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { AlertTriangle, Mail, User } from "lucide-react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { oauthAuthorizationServerInformation } from "@/app/.well-known/oauth-authorization-server/route";
 import { fetchClientMetadata, generateRandomString } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+
+function getBaseUrl(headerStore: Headers): string {
+  const host = headerStore.get("host") || "www.lexy.boo";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
 
 type IndieAuthSearchParams = {
   response_type: string;
@@ -22,7 +27,7 @@ type PageProps = {
   searchParams: Promise<IndieAuthSearchParams>;
 };
 
-const scopes_supported = oauthAuthorizationServerInformation.scopes_supported;
+const scopes_supported = ["profile", "email"] as const;
 
 type ScopeType = (typeof scopes_supported)[number];
 
@@ -74,6 +79,9 @@ async function getAuthenticatedUser(): Promise<{
 async function handleAuthorization(formData: FormData): Promise<void> {
   "use server";
 
+  const headerStore = await headers();
+  const baseUrl = getBaseUrl(headerStore);
+
   const action = formData.get("action") as string;
   const state = formData.get("state") as string;
 
@@ -85,7 +93,7 @@ async function handleAuthorization(formData: FormData): Promise<void> {
 
   if (!storedRequest.ok || !storedRequest.data) {
     // State not found or expired - cannot proceed
-    const redirectUrl = new URL("https://www.lexy.boo/auth");
+    const redirectUrl = new URL(`${baseUrl}/auth`);
     redirectUrl.searchParams.set("ok", "false");
     redirectUrl.searchParams.set(
       "errors",
@@ -112,7 +120,7 @@ async function handleAuthorization(formData: FormData): Promise<void> {
 
   if (!redirectUriValid) {
     // Cannot redirect to untrusted URI; return error without redirecting
-    const errorUrl = new URL("https://www.lexy.boo/auth");
+    const errorUrl = new URL(`${baseUrl}/auth`);
     errorUrl.searchParams.set("ok", "false");
     errorUrl.searchParams.set(
       "errors",
@@ -175,17 +183,19 @@ async function handleAuthorization(formData: FormData): Promise<void> {
 
   redirectUrl.searchParams.set("code", code);
   redirectUrl.searchParams.set("state", state);
-  redirectUrl.searchParams.set("iss", "https://www.lexy.boo/");
+  redirectUrl.searchParams.set("iss", `${baseUrl}/`);
   redirect(redirectUrl.toString());
 }
 
 export default async function AuthEndpoint({ searchParams }: PageProps) {
   const search_params = await searchParams;
+  const headerStore = await headers();
+  const baseUrl = getBaseUrl(headerStore);
 
   const authResult = await getAuthenticatedUser();
 
   if (!authResult.authenticated || !authResult.user || !authResult.userId) {
-    const currentUrl = new URL("https://www.lexy.boo/indieauth/auth");
+    const currentUrl = new URL(`${baseUrl}/indieauth/auth`);
     currentUrl.searchParams.set("response_type", search_params.response_type);
     currentUrl.searchParams.set("client_id", search_params.client_id);
     currentUrl.searchParams.set("redirect_uri", search_params.redirect_uri);
@@ -202,7 +212,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
       currentUrl.searchParams.set("me", search_params.me);
     }
 
-    const loginUrl = new URL("https://www.lexy.boo/auth/login");
+    const loginUrl = new URL(`${baseUrl}/auth/login`);
     loginUrl.searchParams.set("redirect", currentUrl.toString());
     redirect(loginUrl.toString());
   }
@@ -221,7 +231,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
   );
 
   if (!storeResult.ok) {
-    const errorUrl = new URL("https://www.lexy.boo/auth");
+    const errorUrl = new URL(`${baseUrl}/auth`);
     errorUrl.searchParams.set("ok", "false");
     errorUrl.searchParams.set(
       "errors",

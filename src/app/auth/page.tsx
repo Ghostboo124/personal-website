@@ -16,6 +16,7 @@ function AuthContent() {
   useEffect(() => {
     const ok = searchParams.get("ok");
     const provider = searchParams.get("provider");
+    const redirect = searchParams.get("redirect");
 
     if (!ok || !provider) {
       router.replace("/auth/login");
@@ -23,7 +24,11 @@ function AuthContent() {
     }
 
     if (ok === "true") {
-      router.replace("/auth/profile");
+      if (!redirect) {
+        router.replace("/auth/profile");
+      } else {
+        router.replace(redirect!);
+      }
       return;
     }
 
