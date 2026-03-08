@@ -202,10 +202,21 @@ export const GET = async (request: Request): Promise<Response> => {
 
   await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60);
 
-  const successParams = new URLSearchParams({
-    ok: "true",
-    provider: "github",
-  });
+  const redirect = oauthStateOk.oauth_state!.redirect;
+
+  let successParams: URLSearchParams;
+  if (redirect) {
+    successParams = new URLSearchParams({
+      ok: "true",
+      provider: "github",
+      redirect,
+    });
+  } else {
+    successParams = new URLSearchParams({
+      ok: "true",
+      provider: "github",
+    });
+  }
 
   return Response.redirect(new URL(`/auth?${successParams}`, request.url));
 };

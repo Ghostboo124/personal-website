@@ -7,13 +7,24 @@ export default defineSchema({
     userId: v.id("users"),
     clientId: v.string(),
     redirectUri: v.string(),
-    scope: v.string(),
+    scope: v.optional(v.string()),
     codeChallenge: v.string(),
     codeChallengeMethod: v.string(),
     expiresAt: v.number(),
   })
     .index("by_code", ["code"])
     .index("by_userId", ["userId"]),
+  indieauthStates: defineTable({
+    state: v.string(),
+    clientId: v.string(),
+    redirectUri: v.string(),
+    codeChallenge: v.optional(v.string()),
+    codeChallengeMethod: v.optional(v.string()),
+    scope: v.optional(v.string()),
+    expiresAt: v.number(),
+  })
+    .index("by_state", ["state"])
+    .index("by_code", ["codeChallenge"]),
   todo_list: defineTable({
     text: v.string(),
     isCompleted: v.boolean(),
@@ -43,6 +54,7 @@ export default defineSchema({
     codeChallenge: v.optional(v.string()),
     codeVerifier: v.optional(v.string()),
     codeChallengeMethod: v.optional(v.string()),
+    redirect: v.optional(v.string()),
   })
     .index("by_state", ["state"])
     .index("by_code", ["codeChallenge", "codeVerifier"]),

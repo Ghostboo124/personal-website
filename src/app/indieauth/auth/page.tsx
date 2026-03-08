@@ -2,6 +2,7 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { AlertTriangle, Mail, User } from "lucide-react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { oauthAuthorizationServerInformation } from "@/app/.well-known/oauth-authorization-server/route";
 import { fetchClientMetadata, generateRandomString } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -13,7 +14,7 @@ type IndieAuthSearchParams = {
   state: string;
   code_challenge: string;
   code_challenge_method: string;
-  scope: string;
+  scope?: string;
   me?: string;
 };
 
@@ -21,7 +22,7 @@ type PageProps = {
   searchParams: Promise<IndieAuthSearchParams>;
 };
 
-const scopes_supported = ["profile", "email"];
+const scopes_supported = oauthAuthorizationServerInformation.scopes_supported;
 
 type ScopeType = (typeof scopes_supported)[number];
 
@@ -194,7 +195,9 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
       "code_challenge_method",
       search_params.code_challenge_method,
     );
-    currentUrl.searchParams.set("scope", search_params.scope);
+    if (search_params.scope) {
+      currentUrl.searchParams.set("scope", search_params.scope);
+    }
     if (search_params.me) {
       currentUrl.searchParams.set("me", search_params.me);
     }

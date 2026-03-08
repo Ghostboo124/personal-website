@@ -49,7 +49,7 @@ export const GET = async (request: Request) => {
   if (!process.env.CODEBERG_OAUTH_CLIENT_SECRET) {
     isOk = false;
     errors.push(
-      "Could not find Codeberg OAuth2 Client Secred (please contact Lexy)",
+      "Could not find Codeberg OAuth2 Client Secret (please contact Lexy)",
     );
   }
 
@@ -218,10 +218,21 @@ export const GET = async (request: Request) => {
 
   await setCookie("sessionId", sessionAuthOk.token!, 7 * 24 * 60 * 60);
 
-  const successParams = new URLSearchParams({
-    ok: "true",
-    provider: "codeberg",
-  });
+  const redirect = oauthStateOk.oauth_state!.redirect;
+
+  let successParams: URLSearchParams;
+  if (redirect) {
+    successParams = new URLSearchParams({
+      ok: "true",
+      provider: "codeberg",
+      redirect,
+    });
+  } else {
+    successParams = new URLSearchParams({
+      ok: "true",
+      provider: "codeberg",
+    });
+  }
 
   return Response.redirect(new URL(`/auth?${successParams}`, request.url));
 };

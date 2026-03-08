@@ -16,6 +16,7 @@ export const saveState = mutation({
     codeChallenge: v.optional(v.string()),
     codeVerifier: v.optional(v.string()),
     codeChallengeMethod: v.optional(v.string()),
+    redirect: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{ ok: boolean }> => {
     await ctx.db.insert("oauthStates", {

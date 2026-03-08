@@ -13,10 +13,10 @@ export const createAuthorizationCode = mutation({
     userId: v.id("users"),
     clientId: v.string(),
     redirectUri: v.string(),
-    scope: v.string(),
     codeChallenge: v.string(),
     codeChallengeMethod: v.string(),
     sessionToken: v.string(),
+    scope: v.optional(v.string()),
   },
   handler: async (
     ctx,
@@ -50,9 +50,9 @@ export const verifyAuthorizationCode = internalQuery({
       userId: string;
       clientId: string;
       redirectUri: string;
-      scope: string;
       codeChallenge: string;
       codeChallengeMethod: string;
+      scope?: string;
     };
   }> => {
     const record = await ctx.db
@@ -74,9 +74,9 @@ export const verifyAuthorizationCode = internalQuery({
         userId: record.userId,
         clientId: record.clientId,
         redirectUri: record.redirectUri,
-        scope: record.scope,
         codeChallenge: record.codeChallenge,
         codeChallengeMethod: record.codeChallengeMethod,
+        scope: record.scope,
       },
     };
   },
@@ -106,7 +106,7 @@ export const storeAuthorizationRequest = mutation({
     redirectUri: v.string(),
     codeChallenge: v.string(),
     codeChallengeMethod: v.string(),
-    scope: v.string(),
+    scope: v.optional(v.string()),
   },
   handler: async (
     ctx,
@@ -122,7 +122,7 @@ export const storeAuthorizationRequest = mutation({
       return { ok: false, error: "State already exists" };
     }
 
-    await ctx.db.insert("oauthStates", {
+    await ctx.db.insert("indieauthStates", {
       state,
       clientId,
       redirectUri,
@@ -149,11 +149,11 @@ export const getStoredAuthorizationRequest = query({
       redirectUri: string;
       codeChallenge?: string;
       codeChallengeMethod?: string;
-      scope: string;
+      scope?: string;
     };
   }> => {
     const record = await ctx.db
-      .query("oauthStates")
+      .query("indieauthStates")
       .withIndex("by_state", (q) => q.eq("state", state))
       .first();
 
@@ -182,7 +182,7 @@ export const deleteStoredAuthorizationRequest = mutation({
   args: { state: v.string() },
   handler: async (ctx, { state }): Promise<{ ok: boolean; error?: string }> => {
     const record = await ctx.db
-      .query("oauthStates")
+      .query("indieauthStates")
       .withIndex("by_state", (q) => q.eq("state", state))
       .first();
 
@@ -207,7 +207,7 @@ export const consumeAuthorizationCode = mutation({
       userId: string;
       clientId: string;
       redirectUri: string;
-      scope: string;
+      scope?: string;
       codeChallenge: string;
       codeChallengeMethod: string;
     };

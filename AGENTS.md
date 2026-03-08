@@ -12,3 +12,12 @@ If PLAN.md already exists, delete it and create a new one.
 
 **Never** run the dev server, assume it is already running
 **Always** run typechecking and linting and fix all issues found during those steps, including ones not related to your changes
+
+## Learned User Preferences
+
+- Use bun for typecheck and lint when available.
+
+## Learned Workspace Facts
+
+- Client components cannot be async; use `useSearchParams()` from `next/navigation` for search params.
+- Biome sorts imports: external packages first, then `@/` alias, then relative; alphabetical within each group.
