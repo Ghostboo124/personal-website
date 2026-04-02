@@ -31,6 +31,10 @@ const scopes_supported = ["profile", "email"] as const;
 
 type ScopeType = (typeof scopes_supported)[number];
 
+function isScopeType(value: string): value is ScopeType {
+  return (scopes_supported as readonly string[]).includes(value);
+}
+
 async function getAuthenticatedUser(): Promise<{
   authenticated: boolean;
   userId?: Id<"users">;
@@ -255,7 +259,7 @@ export default async function AuthEndpoint({ searchParams }: PageProps) {
   }
 
   const requestedScopes = search_params.scope
-    ? search_params.scope.split(" ").filter((s) => scopes_supported.includes(s))
+    ? search_params.scope.split(" ").filter((s) => isScopeType(s))
     : [];
 
   const scopeIcons: Record<ScopeType, React.ReactElement> = {
