@@ -1,5 +1,0 @@
-@import "tailwindcss";
-@import "@catppuccin/tailwindcss/frappe.css";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
